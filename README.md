@@ -21,14 +21,14 @@ When you call myLock with "lock" it tracks:
 When you call without args it tracks:
 01.01.2016T08:19 Hans.Meiser In
 
-When you want to now your times, call it with "-query". It will
+When you want to show your times, call it with "-query". It will
 read the db and calculate your working time beginning with the
-first "In" per day, ending with the last "out".
+first "in" per day, ending with the last "out".
 
 To automate the tracking, use "-init" and myLock will generate
 Windows Scheduled tasks for screen lock/unlock and session
-login/-out.
-
+login/-out. You will need administrative permissions for this
+task. Open an elevated command prompt.
 
 Usage: mylock.exe [-q] [-r] [-i] [-d] [-h] [-j <Time|Direction">] [<lock>]
 
