@@ -24,16 +24,18 @@ namespace myLock
             bool raw = false;
             bool init = false;
             bool deInit = false;
+            bool help = false;
             string inject=string.Empty;
 
             var configuration = CommandLineParserConfigurator
                 .Create()
-                .WithPositional(d => direction = d)
-                .WithSwitch("query", () => query = true)
-                .WithSwitch("raw", () => raw = true)
-                .WithSwitch("init", () => init = true)
-                .WithSwitch("deinit", () => deInit = true)
-                .WithNamed("inject", I => inject = I)
+                .WithSwitch("query", () => query = true).DescribedBy("Call the db and get your working times.")
+                .WithSwitch("raw", () => raw = true).DescribedBy("Get all logged events")
+                .WithSwitch("init", () => init = true).DescribedBy("Create windows tasks (you need elevated permissions for this one!")
+                .WithSwitch("deinit", () => deInit = true).DescribedBy("Remove windows tasks (you need elevated permissions for this one!")
+                .WithSwitch("h", () => help = true).HavingLongAlias("help").DescribedBy("Show this usage screen.")
+                .WithNamed("inject", I => inject = I).DescribedBy("\"01.01.2016 12:34|1\"", "Use this for debugging only! You can inject timestamps. 1 for lock, 0 for unlock")
+                .WithPositional(d => direction = d).DescribedBy("lock", "tell me to \"lock\" for \"out\" and keep empty for \"in\"")
                 .BuildConfiguration();
             var parser = new CommandLineParser(configuration);
 
@@ -46,6 +48,27 @@ namespace myLock
             }
             else
             {
+                if (help)
+                {
+                    Usage usage = new UsageComposer(configuration).Compose();
+                    Console.WriteLine(@"
+                 _                _    
+                | |              | |   
+ _ __ ___  _   _| |     ___   ___| | __
+| '_ ` _ \| | | | |    / _ \ / __| |/ /
+| | | | | | |_| | |___| (_) | (__|   < 
+|_| |_| |_|\__, \_____/\___/ \___|_|\_\
+            __/ |                      
+           |___/ 
+
+The working time logger by antic_eye ;)
+
+");
+                    Console.WriteLine("Usage: mylock.exe {0}", usage.Arguments);
+                    Console.WriteLine();
+                    Console.WriteLine(usage.Options);
+                    Environment.Exit(0);
+                }
                 if (init)
                 {
                     using (TaskService ts = new TaskService())
