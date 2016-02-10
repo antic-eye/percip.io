@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?define ComponentRules="OneToOne"?>
+  <!-- SourceDir instructs IsWiX the location of the directory that contains files for this merge module -->
+  <?define SourceDir="..\Deploy"?>
+  <Module Id="InstallationMM" Language="1033" Version="1.0.0.0">
+    <Package Id="43c12f6d-0e0b-41a2-9bfd-2b0f31c3240c" Manufacturer="antic_eye" InstallerVersion="200" Platform="x86" />
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="MergeRedirectFolder">
+        <Component Id="owc574052E75C0822AC02E743182ECBA482" Guid="388fd3dd-b3f1-ac9d-1889-f1094df553c0">
+          <File Id="owf574052E75C0822AC02E743182ECBA482" Source="$(var.SourceDir)\Appccelerate.CommandLineParser.dll" KeyPath="yes" />
+        </Component>
+        <Component Id="owc2CC997661B0E9AD725AC0A763E7EE1F5" Guid="28d672eb-2458-6868-0b42-3939e2580341">
+          <File Id="owf2CC997661B0E9AD725AC0A763E7EE1F5" Source="$(var.SourceDir)\Appccelerate.Fundamentals.dll" KeyPath="yes" />
+        </Component>
+        <Component Id="owc47769ADCD5D1C708584F27338C3A2A05" Guid="8b38f7df-d407-4312-594c-7b24b6d6a35a">
+          <File Id="owf47769ADCD5D1C708584F27338C3A2A05" Source="$(var.SourceDir)\myLock.exe" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </Directory>
+    <ComponentGroupRef Id="Custom" />
+  </Module>
+</Wix>
