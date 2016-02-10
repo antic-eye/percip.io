@@ -29,12 +29,12 @@ namespace myLock
 
             var configuration = CommandLineParserConfigurator
                 .Create()
-                .WithSwitch("query", () => query = true).DescribedBy("Call the db and get your working times.")
-                .WithSwitch("raw", () => raw = true).DescribedBy("Get all logged events")
-                .WithSwitch("init", () => init = true).DescribedBy("Create windows tasks (you need elevated permissions for this one!")
-                .WithSwitch("deinit", () => deInit = true).DescribedBy("Remove windows tasks (you need elevated permissions for this one!")
+                .WithSwitch("q", () => query = true).HavingLongAlias("query").DescribedBy("Call the db and get your working times.")
+                .WithSwitch("r", () => raw = true).HavingLongAlias("raw").DescribedBy("Get all logged events")
+                .WithSwitch("i", () => init = true).HavingLongAlias("init").DescribedBy("Create windows tasks (you need elevated permissions for this one!")
+                .WithSwitch("d", () => deInit = true).HavingLongAlias("deinit").DescribedBy("Remove windows tasks (you need elevated permissions for this one!")
                 .WithSwitch("h", () => help = true).HavingLongAlias("help").DescribedBy("Show this usage screen.")
-                .WithNamed("inject", I => inject = I).DescribedBy("\"01.01.2016 12:34|1\"", "Use this for debugging only! You can inject timestamps. 1 for lock, 0 for unlock")
+                .WithNamed("j", I => inject = I).HavingLongAlias("inject").DescribedBy("Time|Direction\"", "Use this for debugging only! You can inject timestamps. 1 for lock, 0 for unlock")
                 .WithPositional(d => direction = d).DescribedBy("lock", "tell me to \"lock\" for \"out\" and keep empty for \"in\"")
                 .BuildConfiguration();
             var parser = new CommandLineParser(configuration);
@@ -52,16 +52,36 @@ namespace myLock
                 {
                     Usage usage = new UsageComposer(configuration).Compose();
                     Console.WriteLine(@"
-                 _                _    
-                | |              | |   
- _ __ ___  _   _| |     ___   ___| | __
-| '_ ` _ \| | | | |    / _ \ / __| |/ /
-| | | | | | |_| | |___| (_) | (__|   < 
-|_| |_| |_|\__, \_____/\___/ \___|_|\_\
-            __/ |                      
-           |___/ 
 
-The working time logger by antic_eye ;)
+ ███▄ ▄███▓▓██   ██▓ ██▓     ▒█████   ▄████▄   ██ ▄█▀
+▓██▒▀█▀ ██▒ ▒██  ██▒▓██▒    ▒██▒  ██▒▒██▀ ▀█   ██▄█▒ 
+▓██    ▓██░  ▒██ ██░▒██░    ▒██░  ██▒▒▓█    ▄ ▓███▄░ 
+▒██    ▒██   ░ ▐██▓░▒██░    ▒██   ██░▒▓▓▄ ▄██▒▓██ █▄ 
+▒██▒   ░██▒  ░ ██▒▓░░██████▒░ ████▓▒░▒ ▓███▀ ░▒██▒ █▄
+░ ▒░   ░  ░   ██▒▒▒ ░ ▒░▓  ░░ ▒░▒░▒░ ░ ░▒ ▒  ░▒ ▒▒ ▓▒
+░  ░      ░ ▓██ ░▒░ ░ ░ ▒  ░  ░ ▒ ▒░   ░  ▒   ░ ░▒ ▒░
+░      ░    ▒ ▒ ░░    ░ ░   ░ ░ ░ ▒  ░        ░ ░░ ░ 
+       ░    ░ ░         ░  ░    ░ ░  ░ ░      ░  ░   
+            ░ ░                      ░               
+MyLock - The working time logger by antic_eye ;)
+
+Use this tool to track your productivity. MyLock generates an
+encrypted database file that contains timestamps and ""in""
+or ""out"".
+
+When you call myLock with ""lock"" it tracks:
+01.01.2016T08:15 Hans.Meiser Out
+
+When you call without args it tracks:
+01.01.2016T08:19 Hans.Meiser In
+
+When you want to now your times, call it with ""-query"". It will
+read the db and calculate your working time beginning with the
+first ""In"" per day, ending with the last ""out"".
+
+To automate the tracking, use ""-init"" and myLock will generate
+Windows Scheduled tasks for screen lock/unlock and session
+login/-out.
 
 ");
                     Console.WriteLine("Usage: mylock.exe {0}", usage.Arguments);
