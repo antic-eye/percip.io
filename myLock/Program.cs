@@ -163,17 +163,24 @@ namespace myLock
                     Console.WriteLine("Today is {0}, the next entry is from {1}; Changing day", currentDay, nextDay);
 #endif
                     if (DateTime.MinValue != dtIn && DateTime.MinValue != dtOut && dtIn.Date == dtOut.Date)
-                        Console.WriteLine("Data for yesterday is {0} in and {1} out. {2}min of work",
-                            dtIn.ToString(), dtOut.ToString(), dtOut - dtIn);
+                        PrintTime(dtIn, dtOut);
 
                     currentDay = col.TimeStamps[i].Stamp.Date;
                     if (col.TimeStamps[i].Direction == Direction.In)//first unlock is start of work
+                    {
                         dtIn = col.TimeStamps[i].Stamp;
+                        dtOut = DateTime.MinValue;
+                    }
                 }
                 if (col.TimeStamps[i].Direction == Direction.Out && (nextDay > currentDay))//lock is end of work
                     dtOut = col.TimeStamps[i].Stamp;
             }
-            Console.WriteLine("Data for yesterday is {0} in and {1} out. {2}min of work", dtIn.ToString(), dtOut.ToString(), dtOut - dtIn);
+            PrintTime(dtIn, dtOut);
+        }
+
+        private static void PrintTime(DateTime dtIn, DateTime dtOut)
+        {
+            Console.WriteLine("{0}\t {1} in and {2} out. {3:hh\\:mm} h of work", dtIn.Date, dtIn.TimeOfDay, dtOut.TimeOfDay, (dtOut - dtIn));
         }
 
         private static void LogTimeStamp(string direction)
