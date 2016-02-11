@@ -432,6 +432,12 @@ task. Open an elevated command prompt.
                 Environment.Exit(-1);
                 return default(T);
             }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("Exception during run: {0}", ex.Message);
+                Environment.Exit(-2);
+                return default(T);
+            }
         }
     }
 }
