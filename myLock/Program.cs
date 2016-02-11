@@ -191,7 +191,9 @@ task. Open an elevated command prompt.
         {
             string executable = string.Format("{0}\\mylock.exe", AssemblyDirectory);
             TaskDefinition td = ts.NewTask();
-            td.Principal.RunLevel = TaskRunLevel.LUA;
+            td.Principal.RunLevel = TaskRunLevel.Highest;
+            td.Principal.LogonType = TaskLogonType.S4U;
+            
             td.RegistrationInfo.Description = description;
 
             switch (trigger)
@@ -205,8 +207,11 @@ task. Open an elevated command prompt.
                     td.Actions.Add(new ExecAction(executable, "", AssemblyDirectory));
                     break;
                 case TriggerType.Logoff:
-                    td.Triggers.Add(new SessionStateChangeTrigger(TaskSessionStateChangeType.ConsoleDisconnect));
+                    EventTrigger eTrigger = new EventTrigger();
+                    eTrigger.Subscription = @"<QueryList><Query Id='1'><Select Path='System'>*[System[(EventID = 1074 or EventID = 7002)]]</Select></Query></QueryList>";
+                    eTrigger.ValueQueries.Add("Name", "Value");
                     td.Actions.Add(new ExecAction(executable, "lock", AssemblyDirectory));
+                    td.Triggers.Add(eTrigger);
                     break;
                 case TriggerType.Lock:
                     td.Triggers.Add(new SessionStateChangeTrigger(TaskSessionStateChangeType.SessionLock));
