@@ -12,7 +12,14 @@ using System.Reflection;
 
 namespace myLock
 {
-    class Program
+    public enum TriggerType
+    {
+        Logon,
+        Unlock,
+        Lock,
+        Logoff
+    }
+    public class Program
     {
         private static string dbFile = Environment.CurrentDirectory + "\\times.db";
         private static string taskPrefix = "__myLock__";
@@ -25,7 +32,7 @@ namespace myLock
             bool init = false;
             bool deInit = false;
             bool help = false;
-            string inject=string.Empty;
+            string inject = string.Empty;
 
             var configuration = CommandLineParserConfigurator
                 .Create()
@@ -49,58 +56,17 @@ namespace myLock
             else
             {
                 if (help)
-                {
-                    Usage usage = new UsageComposer(configuration).Compose();
-                    Console.WriteLine(@"
-
- ███▄ ▄███▓▓██   ██▓ ██▓     ▒█████   ▄████▄   ██ ▄█▀
-▓██▒▀█▀ ██▒ ▒██  ██▒▓██▒    ▒██▒  ██▒▒██▀ ▀█   ██▄█▒ 
-▓██    ▓██░  ▒██ ██░▒██░    ▒██░  ██▒▒▓█    ▄ ▓███▄░ 
-▒██    ▒██   ░ ▐██▓░▒██░    ▒██   ██░▒▓▓▄ ▄██▒▓██ █▄ 
-▒██▒   ░██▒  ░ ██▒▓░░██████▒░ ████▓▒░▒ ▓███▀ ░▒██▒ █▄
-░ ▒░   ░  ░   ██▒▒▒ ░ ▒░▓  ░░ ▒░▒░▒░ ░ ░▒ ▒  ░▒ ▒▒ ▓▒
-░  ░      ░ ▓██ ░▒░ ░ ░ ▒  ░  ░ ▒ ▒░   ░  ▒   ░ ░▒ ▒░
-░      ░    ▒ ▒ ░░    ░ ░   ░ ░ ░ ▒  ░        ░ ░░ ░ 
-       ░    ░ ░         ░  ░    ░ ░  ░ ░      ░  ░   
-            ░ ░                      ░               
-MyLock - The working time logger by antic_eye ;)
-
-Use this tool to track your productivity. MyLock generates an
-encrypted database file that contains timestamps and ""in""
-or ""out"".
-
-When you call myLock with ""lock"" it tracks:
-01.01.2016T08: 15 Hans.Meiser Out
-
-When you call without args it tracks:
-01.01.2016T08: 19 Hans.Meiser In
-
-When you want to show your times, call it with ""-query"".It will
-read the db and calculate your working time beginning with the
-first ""in"" per day, ending with the last ""out"".
-
-To automate the tracking, use ""-init"" and myLock will generate
-Windows Scheduled tasks for screen lock/ unlock and session
-login / -out. You will need administrative permissions for this
-task. Open an elevated command prompt.
-
-");
-  
-                      Console.WriteLine("Usage: mylock.exe {0}", usage.Arguments);
-                    Console.WriteLine();
-                    Console.WriteLine(usage.Options);
-                    Environment.Exit(0);
-                }
+                    ShowUsage(configuration);
                 if (init)
                 {
                     using (TaskService ts = new TaskService())
                     {
                         try
                         {
-                            DefineTask(ts, "myLock lock screen", "lock_pc", TaskSessionStateChangeType.SessionLock);
-                            DefineTask(ts, "myLock unlock screen", "unlock_pc", TaskSessionStateChangeType.SessionUnlock);
-                            DefineTask(ts, "myLock login to pc", "login_pc", TaskSessionStateChangeType.ConsoleConnect);
-                            DefineTask(ts, "myLock logout from pc", "logout_pc", TaskSessionStateChangeType.ConsoleDisconnect);
+                            DefineTask(ts, "myLock lock screen", "lock_pc", TriggerType.Lock);
+                            DefineTask(ts, "myLock unlock screen", "unlock_pc", TriggerType.Unlock);
+                            DefineTask(ts, "myLock login to pc", "login_pc", TriggerType.Logon);
+                            DefineTask(ts, "myLock logout from pc", "logout_pc", TriggerType.Logoff);
                             Console.WriteLine("Initialization complete.");
                             Environment.Exit(0);
                         }
@@ -177,16 +143,76 @@ task. Open an elevated command prompt.
             }
         }
 
-        private static void DefineTask(TaskService ts, string description, string taskName, TaskSessionStateChangeType sessionType)
+        private static void ShowUsage(CommandLineConfiguration configuration)
+        {
+            Usage usage = new UsageComposer(configuration).Compose();
+            Console.WriteLine(@"
+
+ ███▄ ▄███▓▓██   ██▓ ██▓     ▒█████   ▄████▄   ██ ▄█▀
+▓██▒▀█▀ ██▒ ▒██  ██▒▓██▒    ▒██▒  ██▒▒██▀ ▀█   ██▄█▒ 
+▓██    ▓██░  ▒██ ██░▒██░    ▒██░  ██▒▒▓█    ▄ ▓███▄░ 
+▒██    ▒██   ░ ▐██▓░▒██░    ▒██   ██░▒▓▓▄ ▄██▒▓██ █▄ 
+▒██▒   ░██▒  ░ ██▒▓░░██████▒░ ████▓▒░▒ ▓███▀ ░▒██▒ █▄
+░ ▒░   ░  ░   ██▒▒▒ ░ ▒░▓  ░░ ▒░▒░▒░ ░ ░▒ ▒  ░▒ ▒▒ ▓▒
+░  ░      ░ ▓██ ░▒░ ░ ░ ▒  ░  ░ ▒ ▒░   ░  ▒   ░ ░▒ ▒░
+░      ░    ▒ ▒ ░░    ░ ░   ░ ░ ░ ▒  ░        ░ ░░ ░ 
+       ░    ░ ░         ░  ░    ░ ░  ░ ░      ░  ░   
+            ░ ░                      ░               
+MyLock - The working time logger by antic_eye ;)
+
+Use this tool to track your productivity. MyLock generates an
+encrypted database file that contains timestamps and ""in""
+or ""out"".
+
+When you call myLock with ""lock"" it tracks:
+01.01.2016T08: 15 Hans.Meiser Out
+
+When you call without args it tracks:
+01.01.2016T08: 19 Hans.Meiser In
+
+When you want to show your times, call it with ""-query"".It will
+read the db and calculate your working time beginning with the
+first ""in"" per day, ending with the last ""out"".
+
+To automate the tracking, use ""-init"" and myLock will generate
+Windows Scheduled tasks for screen lock/ unlock and session
+login / -out. You will need administrative permissions for this
+task. Open an elevated command prompt.
+
+");
+
+            Console.WriteLine("Usage: mylock.exe {0}", usage.Arguments);
+            Console.WriteLine();
+            Console.WriteLine(usage.Options);
+            Environment.Exit(0);
+        }
+
+        private static void DefineTask(TaskService ts, string description, string taskName, TriggerType trigger)
         {
             string executable = string.Format("{0}\\mylock.exe", AssemblyDirectory);
             TaskDefinition td = ts.NewTask();
             td.Principal.RunLevel = TaskRunLevel.LUA;
             td.RegistrationInfo.Description = description;
-            td.Triggers.Add(new SessionStateChangeTrigger(sessionType));
-            td.Actions.Add(new ExecAction(executable,
-                (sessionType == TaskSessionStateChangeType.SessionLock || 
-                sessionType == TaskSessionStateChangeType.ConsoleDisconnect) ? "lock" : "", AssemblyDirectory));
+
+            switch (trigger)
+            {
+                case TriggerType.Logon:
+                    td.Triggers.Add(new LogonTrigger());
+                    td.Actions.Add(new ExecAction(executable, "", AssemblyDirectory));
+                    break;
+                case TriggerType.Unlock:
+                    td.Triggers.Add(new SessionStateChangeTrigger(TaskSessionStateChangeType.SessionUnlock));
+                    td.Actions.Add(new ExecAction(executable, "", AssemblyDirectory));
+                    break;
+                case TriggerType.Logoff:
+                    td.Triggers.Add(new SessionStateChangeTrigger(TaskSessionStateChangeType.ConsoleDisconnect));
+                    td.Actions.Add(new ExecAction(executable, "lock", AssemblyDirectory));
+                    break;
+                case TriggerType.Lock:
+                    td.Triggers.Add(new SessionStateChangeTrigger(TaskSessionStateChangeType.SessionLock));
+                    td.Actions.Add(new ExecAction(executable, "lock", AssemblyDirectory));
+                    break;
+            }
             ts.RootFolder.RegisterTaskDefinition(taskPrefix + taskName, td);
         }
 
@@ -301,13 +327,14 @@ task. Open an elevated command prompt.
 
         private static void PrintTime(DateTime dtIn, DateTime dtOut)
         {
-            try {
+            try
+            {
                 if (dtOut == DateTime.MinValue)
                     Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and till now ({2:HH\\:mm}) {3:hh\\:mm} h of work", dtIn.Date, dtIn, DateTime.Now, (DateTime.Now - dtIn));
                 else
                     Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and {2:HH\\:mm} out. {3:hh\\:mm} h of work", dtIn.Date, dtIn, dtOut, (dtOut - dtIn));
             }
-            catch(FormatException ex)
+            catch (FormatException ex)
             {
                 Console.Error.WriteLine("dtIn {0}", dtIn);
                 Console.Error.WriteLine("dtOut {0}", dtOut);
@@ -366,10 +393,11 @@ task. Open an elevated command prompt.
         {
             var key = new DESCryptoServiceProvider();
             int length = encryptionKey.Length / 2;
-            byte[] k = Encoding.ASCII.GetBytes(encryptionKey.Substring(0,length));
+            byte[] k = Encoding.ASCII.GetBytes(encryptionKey.Substring(0, length));
             byte[] iV = Encoding.ASCII.GetBytes(encryptionKey.Substring(length));
             var e = key.CreateEncryptor(k, iV);
-            try {
+            try
+            {
                 using (var fs = File.Open(filename, FileMode.Create))
                 {
                     using (var cs = new CryptoStream(fs, e, CryptoStreamMode.Write))
@@ -378,7 +406,7 @@ task. Open an elevated command prompt.
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.Error.WriteLine(ex.Message);
                 Environment.Exit(-1);
