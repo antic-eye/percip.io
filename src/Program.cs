@@ -19,6 +19,12 @@ namespace percip.io
         Lock,
         Logoff
     }
+    public enum ExitCode
+    {
+        Exception = -2,
+        ArgumentError = -1,
+        OK = 0
+    }
     public class Program
     {
         private static string dbFile = Environment.CurrentDirectory + "\\times.db";
@@ -50,13 +56,16 @@ namespace percip.io
 
             if (!parseResult.Succeeded)
             {
-                Console.WriteLine("wrong arguments");
-                Environment.Exit(-1);
+                ShowUsage(configuration, parseResult.Message);
+                Environment.Exit((int)ExitCode.ArgumentError);
             }
             else
             {
                 if (help)
+                {
                     ShowUsage(configuration);
+                    Environment.Exit((int)ExitCode.OK);
+                }
                 if (init)
                 {
                     using (TaskService ts = new TaskService())
@@ -68,12 +77,12 @@ namespace percip.io
                             DefineTask(ts, "myLock login to pc", "login_pc", TriggerType.Logon);
                             DefineTask(ts, "myLock logout from pc", "logout_pc", TriggerType.Logoff);
                             Console.WriteLine("Initialization complete.");
-                            Environment.Exit(0);
+                            Environment.Exit((int)ExitCode.OK);
                         }
                         catch (UnauthorizedAccessException)
                         {
                             Console.Error.WriteLine("Access denied, please use an elevated prompt.");
-                            Environment.Exit(-1);
+                            Environment.Exit((int)ExitCode.Exception);
                         }
                     }
                 }
@@ -89,12 +98,12 @@ namespace percip.io
                                     ts.RootFolder.DeleteTask(t.Name);
 
                             Console.WriteLine("Deinitialization complete.");
-                            Environment.Exit(0);
+                            Environment.Exit((int)ExitCode.OK);
                         }
                         catch (UnauthorizedAccessException)
                         {
                             Console.Error.WriteLine("Access denied, please use an elevated prompt.");
-                            Environment.Exit(-1);
+                            Environment.Exit((int)ExitCode.Exception);
                         }
                     }
                 }
@@ -123,7 +132,8 @@ namespace percip.io
 
                     Console.WriteLine("Injection successfull.");
                     Console.WriteLine("Values were: {0}", inject);
-                    Environment.Exit(0);
+
+                    Environment.Exit((int)ExitCode.OK);
                 }
 
                 if (raw)
@@ -133,7 +143,8 @@ namespace percip.io
                         Console.WriteLine("{0} {1} {2}", t.Stamp, t.User, t.Direction);
 
                     Console.WriteLine("EOF");
-                    Environment.Exit(0);
+
+                    Environment.Exit((int)ExitCode.OK);
                 }
 
                 if (!query)
@@ -143,15 +154,17 @@ namespace percip.io
             }
         }
 
-        private static void ShowUsage(CommandLineConfiguration configuration)
+        private static void ShowUsage(CommandLineConfiguration configuration, string parseResult = "")
         {
             Usage usage = new UsageComposer(configuration).Compose();
-            var build = ((AssemblyInformationalVersionAttribute)Assembly
-  .GetAssembly(typeof(Program))
-  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0])
-  .InformationalVersion;
 
-            Console.WriteLine(@"
+            if (String.IsNullOrEmpty(parseResult))
+            {
+                var build = ((AssemblyInformationalVersionAttribute)Assembly
+                              .GetAssembly(typeof(Program))
+                              .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0])
+                              .InformationalVersion;
+                Console.WriteLine(@"
  ██▓███  ▓█████  ██▀███   ▄████▄   ██▓ ██▓███        ██▓ ▒█████  
 ▓██░  ██▒▓█   ▀ ▓██ ▒ ██▒▒██▀ ▀█  ▓██▒▓██░  ██▒     ▓██▒▒██▒  ██▒
 ▓██░ ██▓▒▒███   ▓██ ░▄█ ▒▒▓█    ▄ ▒██▒▓██░ ██▓▒     ▒██▒▒██░  ██▒
@@ -184,11 +197,22 @@ login/-out. You will need administrative permissions for this
 task. Open an elevated command prompt.
 
 ", build);
-            Console.WriteLine("Usage: percip.io.exe {0}", usage.Arguments);
-            Console.WriteLine();
-            Console.WriteLine(usage.Options);
-            Environment.Exit(0);
-        }
+                Console.WriteLine("Usage: percip.io.exe {0}", usage.Arguments);
+                Console.WriteLine();
+                Console.WriteLine(usage.Options);
+                Console.WriteLine("Exit codes:");
+                
+                foreach (var e in Enum.GetValues(typeof(ExitCode)))
+                    Console.WriteLine(string.Format("{0,4}\t{1}", 
+                        (int)e, 
+                        e.ToString()));
+            }
+            else
+            {
+                Console.WriteLine(parseResult);
+                Console.WriteLine();
+            }
+        }    
 
         private static void DefineTask(TaskService ts, string description, string taskName, TriggerType trigger)
         {
