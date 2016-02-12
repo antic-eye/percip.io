@@ -325,52 +325,7 @@ task. Open an elevated command prompt.
                         User = Environment.UserName
                     });
 #endif
-            col.TimeStamps.Sort();
-            DateTime dtIn = DateTime.MinValue;
-            DateTime dtOut = DateTime.MinValue;
-            DateTime currentDay = DateTime.MinValue;
-
-            List<string> days = new List<string>();
-
-            for (int i = 0; i < col.TimeStamps.Count; i++)
-            {
-                DateTime nextDay = (i < col.TimeStamps.Count - 1) ? col.TimeStamps[i + 1].Stamp.Date : DateTime.Now.Date;
-
-                if (currentDay == DateTime.MinValue || nextDay > currentDay)//1st run
-                {
-#if DEBUG
-                    Console.WriteLine("Today is {0}, the next entry is from {1}; Changing day", currentDay, nextDay);
-#endif
-                    if (DateTime.MinValue != dtIn && DateTime.MinValue != dtOut && dtIn.Date == dtOut.Date)
-                        PrintTime(dtIn, dtOut);
-
-                    currentDay = col.TimeStamps[i].Stamp.Date;
-                    if (col.TimeStamps[i].Direction == Direction.In)//first unlock is start of work
-                    {
-                        dtIn = col.TimeStamps[i].Stamp;
-                        dtOut = DateTime.MinValue;
-                    }
-                }
-                if (col.TimeStamps[i].Direction == Direction.Out && (nextDay > currentDay))//lock is end of work
-                    dtOut = col.TimeStamps[i].Stamp;
-            }
-            PrintTime(dtIn, dtOut);
-        }
-
-        private static void PrintTime(DateTime dtIn, DateTime dtOut)
-        {
-            try
-            {
-                if (dtOut == DateTime.MinValue)
-                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and till now ({2:HH\\:mm}) {3:hh\\:mm} h of work", dtIn.Date, dtIn, DateTime.Now, (DateTime.Now - dtIn));
-                else
-                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and {2:HH\\:mm} out. {3:hh\\:mm} h of work", dtIn.Date, dtIn, dtOut, (dtOut - dtIn));
-            }
-            catch (FormatException)
-            {
-                Console.Error.WriteLine("dtIn {0}", dtIn);
-                Console.Error.WriteLine("dtOut {0}", dtOut);
-            }
+            Console.WriteLine(col.ToString());            
         }
 
         private static void LogTimeStamp(string direction)
