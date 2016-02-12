@@ -10,7 +10,7 @@ using System.Xml.Serialization;
 using Microsoft.Win32.TaskScheduler;
 using System.Reflection;
 
-namespace myLock
+namespace percip.io
 {
     public enum TriggerType
     {
@@ -22,7 +22,7 @@ namespace myLock
     public class Program
     {
         private static string dbFile = Environment.CurrentDirectory + "\\times.db";
-        private static string taskPrefix = "__myLock__";
+        private static string taskPrefix = "__percip.io__";
 
         static void Main(string[] args)
         {
@@ -147,41 +147,39 @@ namespace myLock
         {
             Usage usage = new UsageComposer(configuration).Compose();
             Console.WriteLine(@"
-
- ███▄ ▄███▓▓██   ██▓ ██▓     ▒█████   ▄████▄   ██ ▄█▀
-▓██▒▀█▀ ██▒ ▒██  ██▒▓██▒    ▒██▒  ██▒▒██▀ ▀█   ██▄█▒ 
-▓██    ▓██░  ▒██ ██░▒██░    ▒██░  ██▒▒▓█    ▄ ▓███▄░ 
-▒██    ▒██   ░ ▐██▓░▒██░    ▒██   ██░▒▓▓▄ ▄██▒▓██ █▄ 
-▒██▒   ░██▒  ░ ██▒▓░░██████▒░ ████▓▒░▒ ▓███▀ ░▒██▒ █▄
-░ ▒░   ░  ░   ██▒▒▒ ░ ▒░▓  ░░ ▒░▒░▒░ ░ ░▒ ▒  ░▒ ▒▒ ▓▒
-░  ░      ░ ▓██ ░▒░ ░ ░ ▒  ░  ░ ▒ ▒░   ░  ▒   ░ ░▒ ▒░
-░      ░    ▒ ▒ ░░    ░ ░   ░ ░ ░ ▒  ░        ░ ░░ ░ 
-       ░    ░ ░         ░  ░    ░ ░  ░ ░      ░  ░   
-            ░ ░                      ░               
-MyLock - The working time logger by antic_eye ;)
+ ██▓███  ▓█████  ██▀███   ▄████▄   ██▓ ██▓███        ██▓ ▒█████  
+▓██░  ██▒▓█   ▀ ▓██ ▒ ██▒▒██▀ ▀█  ▓██▒▓██░  ██▒     ▓██▒▒██▒  ██▒
+▓██░ ██▓▒▒███   ▓██ ░▄█ ▒▒▓█    ▄ ▒██▒▓██░ ██▓▒     ▒██▒▒██░  ██▒
+▒██▄█▓▒ ▒▒▓█  ▄ ▒██▀▀█▄  ▒▓▓▄ ▄██▒░██░▒██▄█▓▒ ▒     ░██░▒██   ██░
+▒██▒ ░  ░░▒████▒░██▓ ▒██▒▒ ▓███▀ ░░██░▒██▒ ░  ░ ██▓ ░██░░ ████▓▒░
+▒▓▒░ ░  ░░░ ▒░ ░░ ▒▓ ░▒▓░░ ░▒ ▒  ░░▓  ▒▓▒░ ░  ░ ▒▓▒ ░▓  ░ ▒░▒░▒░ 
+░▒ ░      ░ ░  ░  ░▒ ░ ▒░  ░  ▒    ▒ ░░▒ ░      ░▒   ▒ ░  ░ ▒ ▒░ 
+░░          ░     ░░   ░ ░         ▒ ░░░        ░    ▒ ░░ ░ ░ ▒  
+            ░  ░   ░     ░ ░       ░             ░   ░      ░ ░  
+                         ░                       ░               
+Percip.io - The working time logger by antic_eye ;)
 
 Use this tool to track your productivity. MyLock generates an
 encrypted database file that contains timestamps and ""in""
 or ""out"".
 
 When you call myLock with ""lock"" it tracks:
-01.01.2016T08: 15 Hans.Meiser Out
+01.01.2016T08: 15 Max.Mustermann Out
 
 When you call without args it tracks:
-01.01.2016T08: 19 Hans.Meiser In
+01.01.2016T08: 19 Max.Mustermann In
 
-When you want to show your times, call it with ""-query"".It will
+When you want to show your times, call it with ""--query"".It will
 read the db and calculate your working time beginning with the
 first ""in"" per day, ending with the last ""out"".
 
-To automate the tracking, use ""-init"" and myLock will generate
-Windows Scheduled tasks for screen lock/ unlock and session
-login / -out. You will need administrative permissions for this
+To automate the tracking, use ""--init"" and myLock will generate
+Windows Scheduled tasks for screen lock/unlock and session
+login/-out. You will need administrative permissions for this
 task. Open an elevated command prompt.
 
 ");
-
-            Console.WriteLine("Usage: mylock.exe {0}", usage.Arguments);
+            Console.WriteLine("Usage: percip.io.exe {0}", usage.Arguments);
             Console.WriteLine();
             Console.WriteLine(usage.Options);
             Environment.Exit(0);
@@ -189,7 +187,7 @@ task. Open an elevated command prompt.
 
         private static void DefineTask(TaskService ts, string description, string taskName, TriggerType trigger)
         {
-            string executable = string.Format("{0}\\mylock.exe", AssemblyDirectory);
+            string executable = string.Format("{0}\\percip.io.exe", AssemblyDirectory);
             TaskDefinition td = ts.NewTask();
             td.Principal.RunLevel = TaskRunLevel.Highest;
             td.Principal.LogonType = TaskLogonType.S4U;
@@ -339,7 +337,7 @@ task. Open an elevated command prompt.
                 else
                     Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and {2:HH\\:mm} out. {3:hh\\:mm} h of work", dtIn.Date, dtIn, dtOut, (dtOut - dtIn));
             }
-            catch (FormatException ex)
+            catch (FormatException)
             {
                 Console.Error.WriteLine("dtIn {0}", dtIn);
                 Console.Error.WriteLine("dtOut {0}", dtOut);
@@ -379,7 +377,7 @@ task. Open an elevated command prompt.
 
             col.TimeStamps.Add(stamp);
             EncryptAndSerialize<TimeStampCollection>(dbFile, col, sMyKey);
-            Console.WriteLine("Saved: {0}|", stamp.Stamp, stamp.Direction);
+            Console.WriteLine("Saved: {0}|{1}|{2}", stamp.Stamp, stamp.User, stamp.Direction);
         }
 
         private static string GetKey()
@@ -428,8 +426,12 @@ task. Open an elevated command prompt.
             try
             {
                 using (var fs = File.Open(filename, FileMode.Open))
-                using (var cs = new CryptoStream(fs, d, CryptoStreamMode.Read))
-                    return (T)(new XmlSerializer(typeof(T))).Deserialize(cs);
+                {
+                    using (var cs = new CryptoStream(fs, d, CryptoStreamMode.Read))
+                    {
+                        return (T)(new XmlSerializer(typeof(T))).Deserialize(cs);
+                    }
+                }
             }
             catch (FileNotFoundException)
             {

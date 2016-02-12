@@ -7,8 +7,8 @@
     <ProjectGuid>{E9756804-7E60-474D-A5BF-2F37E125B41F}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>myLock</RootNamespace>
-    <AssemblyName>myLock</AssemblyName>
+    <RootNamespace>percip.io</RootNamespace>
+    <AssemblyName>percip.io</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -48,6 +48,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>59CA7C81F8E2ECDBFCCC7B0D0988A5AB99EEC339</ManifestCertificateThumbprint>
@@ -143,7 +144,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="myLock_TemporaryKey.pfx" />
     <None Include="packages.config" />
     <None Include="Properties\app.manifest" />
   </ItemGroup>
