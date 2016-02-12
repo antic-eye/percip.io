@@ -146,6 +146,11 @@ namespace percip.io
         private static void ShowUsage(CommandLineConfiguration configuration)
         {
             Usage usage = new UsageComposer(configuration).Compose();
+            var build = ((AssemblyInformationalVersionAttribute)Assembly
+  .GetAssembly(typeof(Program))
+  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0])
+  .InformationalVersion;
+
             Console.WriteLine(@"
  ██▓███  ▓█████  ██▀███   ▄████▄   ██▓ ██▓███        ██▓ ▒█████  
 ▓██░  ██▒▓█   ▀ ▓██ ▒ ██▒▒██▀ ▀█  ▓██▒▓██░  ██▒     ▓██▒▒██▒  ██▒
@@ -157,7 +162,7 @@ namespace percip.io
 ░░          ░     ░░   ░ ░         ▒ ░░░        ░    ▒ ░░ ░ ░ ▒  
             ░  ░   ░     ░ ░       ░             ░   ░      ░ ░  
                          ░                       ░               
-Percip.io - The working time logger by antic_eye ;)
+Percip.io {0} - The working time logger by antic_eye ;)
 
 Use this tool to track your productivity. MyLock generates an
 encrypted database file that contains timestamps and ""in""
@@ -178,7 +183,7 @@ Windows Scheduled tasks for screen lock/unlock and session
 login/-out. You will need administrative permissions for this
 task. Open an elevated command prompt.
 
-");
+", build);
             Console.WriteLine("Usage: percip.io.exe {0}", usage.Arguments);
             Console.WriteLine();
             Console.WriteLine(usage.Options);
