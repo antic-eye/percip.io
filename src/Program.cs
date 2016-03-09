@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Microsoft.Win32.TaskScheduler;
-using System.Reflection;
+using System.Reflection; 
 
 namespace percip.io
 {
@@ -29,6 +29,7 @@ namespace percip.io
     {
         private static string dbFile = Environment.CurrentDirectory + "\\times.db";
         private static string taskPrefix = "__percip.io__";
+        private static DataSaver Saver = new XMLDataSaver();
 
         static void Main(string[] args)
         {
@@ -112,7 +113,7 @@ namespace percip.io
                     TimeStampCollection col;
                     try
                     {
-                        col = DecryptAndDeserialize<TimeStampCollection>(dbFile, GetKey());
+                        col = Saver.Load<TimeStampCollection>(dbFile);
                     }
                     catch (FileNotFoundException)
                     {
@@ -128,7 +129,7 @@ namespace percip.io
 
                     col.TimeStamps.Add(stamp);
                     col.TimeStamps.Sort();
-                    EncryptAndSerialize<TimeStampCollection>(dbFile, col, GetKey());
+                    Saver.Save<TimeStampCollection>(dbFile, col);
 
                     Console.WriteLine("Injection successfull.");
                     Console.WriteLine("Values were: {0}", inject);
@@ -138,7 +139,7 @@ namespace percip.io
 
                 if (raw)
                 {
-                    TimeStampCollection col = DecryptAndDeserialize<TimeStampCollection>(dbFile, GetKey());
+                    TimeStampCollection col = Saver.Load<TimeStampCollection>(dbFile);
                     foreach (var t in col.TimeStamps)
                         Console.WriteLine("{0} {1} {2}", t.Stamp, t.User, t.Direction);
 
@@ -261,7 +262,7 @@ task. Open an elevated command prompt.
         private static void QueryWorkingTimes()
         {
 #if !DEBUG
-            TimeStampCollection col = DecryptAndDeserialize<TimeStampCollection>(dbFile, GetKey());
+            TimeStampCollection col = Saver.Load<TimeStampCollection>(dbFile);
 #else
                     TimeStampCollection col = new TimeStampCollection();
                     col.TimeStamps.Add(new TimeStamp()
@@ -386,14 +387,13 @@ task. Open an elevated command prompt.
                 User = Environment.UserName
             };
 
-            string sMyKey = GetKey();
 
             TimeStampCollection col = null;
             if (File.Exists(dbFile))
             {
                 try
                 {
-                    col = DecryptAndDeserialize<TimeStampCollection>(dbFile, sMyKey);
+                    col = Saver.Load<TimeStampCollection>(dbFile);
                 }
                 catch (CryptographicException ex)
                 {
@@ -405,75 +405,8 @@ task. Open an elevated command prompt.
                 col = new TimeStampCollection();
 
             col.TimeStamps.Add(stamp);
-            EncryptAndSerialize<TimeStampCollection>(dbFile, col, sMyKey);
+            Saver.Save<TimeStampCollection>(dbFile, col);
             Console.WriteLine("Saved: {0}|{1}|{2}", stamp.Stamp, stamp.User, stamp.Direction);
-        }
-
-        private static string GetKey()
-        {
-            string sMyKey = Environment.UserName + "@" + Environment.UserDomainName;
-            int iBitSize = 16;
-            if (sMyKey.Length > iBitSize)
-                sMyKey = sMyKey.Substring(0, iBitSize);
-            if (sMyKey.Length < iBitSize)
-                for (int i = sMyKey.Length; i < iBitSize; i++)
-                    sMyKey = "~" + sMyKey;
-            return sMyKey;
-        }
-
-        public static void EncryptAndSerialize<T>(string filename, T obj, string encryptionKey)
-        {
-            var key = new DESCryptoServiceProvider();
-            int length = encryptionKey.Length / 2;
-            byte[] k = Encoding.ASCII.GetBytes(encryptionKey.Substring(0, length));
-            byte[] iV = Encoding.ASCII.GetBytes(encryptionKey.Substring(length));
-            var e = key.CreateEncryptor(k, iV);
-            try
-            {
-                using (var fs = File.Open(filename, FileMode.Create))
-                {
-                    using (var cs = new CryptoStream(fs, e, CryptoStreamMode.Write))
-                    {
-                        (new XmlSerializer(typeof(T))).Serialize(cs, obj);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine(ex.Message);
-                Environment.Exit(-1);
-            }
-        }
-
-        public static T DecryptAndDeserialize<T>(string filename, string encryptionKey)
-        {
-            var key = new DESCryptoServiceProvider();
-            int length = encryptionKey.Length / 2;
-            byte[] k = Encoding.ASCII.GetBytes(encryptionKey.Substring(0, length));
-            byte[] iV = Encoding.ASCII.GetBytes(encryptionKey.Substring(length));
-            var d = key.CreateDecryptor(k, iV);
-            try
-            {
-                using (var fs = File.Open(filename, FileMode.Open))
-                {
-                    using (var cs = new CryptoStream(fs, d, CryptoStreamMode.Read))
-                    {
-                        return (T)(new XmlSerializer(typeof(T))).Deserialize(cs);
-                    }
-                }
-            }
-            catch (FileNotFoundException)
-            {
-                Console.Error.WriteLine("{0} could not be found", filename);
-                Environment.Exit(-1);
-                return default(T);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine("Exception during run: {0}", ex.Message);
-                Environment.Exit(-2);
-                return default(T);
-            }
         }
     }
 }
