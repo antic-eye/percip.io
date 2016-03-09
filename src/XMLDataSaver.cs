@@ -9,7 +9,7 @@ using System.Xml.Serialization;
 
 namespace percip.io
 {
-    class XMLDataSaver : DataSaver
+    class XMLDataSaver : IDataSaver
     {
         private T DecryptAndDeserialize<T>(string filename, string encryptionKey)
         {

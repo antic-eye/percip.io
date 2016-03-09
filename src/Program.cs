@@ -29,7 +29,7 @@ namespace percip.io
     {
         private static string dbFile = Environment.CurrentDirectory + "\\times.db";
         private static string taskPrefix = "__percip.io__";
-        private static DataSaver Saver = new XMLDataSaver();
+        private static IDataSaver Saver = new XMLDataSaver();
 
         static void Main(string[] args)
         {
