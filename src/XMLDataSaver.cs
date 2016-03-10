@@ -11,6 +11,15 @@ namespace percip.io
 {
     class XMLDataSaver : IDataSaver
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filename"></param>
+        /// <param name="encryptionKey"></param>
+        /// <returns></returns>
+        /// <exception cref="FileNotFoundException"></exception>
+        /// <exception cref="Exception"></exception>
         private T DecryptAndDeserialize<T>(string filename, string encryptionKey)
         {
             var key = new DESCryptoServiceProvider();
@@ -30,18 +39,22 @@ namespace percip.io
             }
             catch (FileNotFoundException)
             {
-                Console.Error.WriteLine("{0} could not be found", filename);
-                Environment.Exit(-1);
-                return default(T);
+                throw new FileNotFoundException("{0} could not be found", filename);
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine("Exception during run: {0}", ex.Message);
-                Environment.Exit(-2);
-                return default(T);
+                throw new Exception(ex.Message);
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filename"></param>
+        /// <param name="obj"></param>
+        /// <param name="encryptionKey"></param>
+        /// <exception cref="Exception"></exception>
         private void EncryptAndSerialize<T>(string filename, T obj, string encryptionKey)
         {
             var key = new DESCryptoServiceProvider();
@@ -61,8 +74,7 @@ namespace percip.io
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine(ex.Message);
-                Environment.Exit(-1);
+                throw new Exception(ex.Message);
             }
         }
 
