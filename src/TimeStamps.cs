@@ -16,11 +16,12 @@ namespace percip.io
             set { stamps = value; }
         }
     }
-    public class TimeStamp:IComparable<TimeStamp>
+    public class TimeStamp : IComparable<TimeStamp>
     {
         private DateTime timeStamp;
         private string user;
         private Direction direction;
+        private List<string> tags = new List<string>();
 
         public DateTime Stamp
         {
@@ -40,6 +41,12 @@ namespace percip.io
             {
                 this.direction = value;
             }
+        }
+
+        public List<string> Tags
+        {
+            get { return this.tags; }
+            set { this.tags = value; }
         }
 
         public int CompareTo(TimeStamp other)
