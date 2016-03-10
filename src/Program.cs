@@ -8,7 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Microsoft.Win32.TaskScheduler;
-using System.Reflection; 
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace percip.io
 {
@@ -40,6 +41,7 @@ namespace percip.io
             bool deInit = false;
             bool help = false;
             string inject = string.Empty;
+            string tags = string.Empty;
 
             var configuration = CommandLineParserConfigurator
                 .Create()
@@ -49,6 +51,7 @@ namespace percip.io
                 .WithSwitch("d", () => deInit = true).HavingLongAlias("deinit").DescribedBy("Remove windows tasks (you need elevated permissions for this one!")
                 .WithSwitch("h", () => help = true).HavingLongAlias("help").DescribedBy("Show this usage screen.")
                 .WithNamed("j", I => inject = I).HavingLongAlias("inject").DescribedBy("Time|Direction\"", "Use this for debugging only! You can inject timestamps. 1 for lock, 0 for unlock")
+                .WithNamed("t", t => tags = t).HavingLongAlias("tags").DescribedBy("timestamp|Tag1,Tag2,...\"", "Tag a timestamp; use ticks for the timestamp (-r shows them)")
                 .WithPositional(d => direction = d).DescribedBy("lock", "tell me to \"lock\" for \"out\" and keep empty for \"in\"")
                 .BuildConfiguration();
             var parser = new CommandLineParser(configuration);
@@ -141,11 +144,45 @@ namespace percip.io
                 {
                     TimeStampCollection col = Saver.Load<TimeStampCollection>(dbFile);
                     foreach (var t in col.TimeStamps)
-                        Console.WriteLine("{0} {1} {2}", t.Stamp, t.User, t.Direction);
+                        Console.WriteLine("{0,-10} {1} {2} {3} {4}", UnixTimestampFromDateTime(t.Stamp), t.Stamp, t.User, t.Direction, (t.Tags.Count > 0) ? "Tags: " + String.Join(", ", t.Tags) : string.Empty);
 
                     Console.WriteLine("EOF");
 
                     Environment.Exit((int)ExitCode.OK);
+                }
+
+                if (!string.IsNullOrEmpty(tags))
+                {
+                    TimeStampCollection col;
+                    try
+                    {
+                        col = Saver.Load<TimeStampCollection>(dbFile);
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        col = new TimeStampCollection();
+                    }
+                    int iPipe = tags.IndexOf("|");
+                    if (iPipe == -1)
+                    {
+                        Console.Error.WriteLine("Wrong input format, use \"Ticks|foo,bar,zwusch\"!");
+                        Environment.Exit(-3);
+                    }
+                    long lTicks = long.Parse(tags.Substring(0, iPipe));
+                    List<string> tagList = tags.Substring(iPipe + 1).Split(',').ToList<string>();
+
+                    try
+                    {
+                        var q = (from c in col.TimeStamps where UnixTimestampFromDateTime(c.Stamp) == lTicks select c).Single();
+                        q.Tags.AddRange(tagList);
+
+                        Saver.Save<TimeStampCollection>(dbFile, col);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        Console.Error.WriteLine("Timestamp {0} could not be found. Check with \"-r\".", lTicks);
+                        Environment.Exit((int)ExitCode.Exception);
+                    }
                 }
 
                 if (!query)
@@ -373,7 +410,12 @@ task. Open an elevated command prompt.
                 Console.Error.WriteLine("dtOut {0}", dtOut);
             }
         }
-
+        private static long UnixTimestampFromDateTime(DateTime date)
+        {
+            long unixTimestamp = date.Ticks - new DateTime(1970, 1, 1).Ticks;
+            unixTimestamp /= TimeSpan.TicksPerSecond;
+            return unixTimestamp;
+        }
         private static void LogTimeStamp(string direction)
         {
             Direction dir = Direction.In;
