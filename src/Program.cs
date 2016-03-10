@@ -38,7 +38,9 @@ namespace percip.io
             bool init = false;
             bool deInit = false;
             bool help = false;
+            bool htmlReport = false;
             string inject = string.Empty;
+            string timeSpan = string.Empty;
 
             var configuration = CommandLineParserConfigurator
                 .Create()
@@ -47,7 +49,9 @@ namespace percip.io
                 .WithSwitch("i", () => init = true).HavingLongAlias("init").DescribedBy("Create windows tasks (you need elevated permissions for this one!")
                 .WithSwitch("d", () => deInit = true).HavingLongAlias("deinit").DescribedBy("Remove windows tasks (you need elevated permissions for this one!")
                 .WithSwitch("h", () => help = true).HavingLongAlias("help").DescribedBy("Show this usage screen.")
+                .WithSwitch("o", () => htmlReport = true).HavingLongAlias("out").DescribedBy("Show html report.")
                 .WithNamed("j", I => inject = I).HavingLongAlias("inject").DescribedBy("Time|Direction\"", "Use this for debugging only! You can inject timestamps. 1 for lock, 0 for unlock")
+                .WithNamed("t", t => timeSpan = t).HavingLongAlias("timeSpan").DescribedBy("Working time span", "if you use -q with this you will get the hours of extra work (iq. 8.5)")
                 .WithPositional(d => direction = d).DescribedBy("lock", "tell me to \"lock\" for \"out\" and keep empty for \"in\"")
                 .BuildConfiguration();
             var parser = new CommandLineParser(configuration);
@@ -150,7 +154,12 @@ namespace percip.io
                 if (!query)
                     LogTimeStamp(direction);
                 else
-                    QueryWorkingTimes();
+                {
+                    if (!htmlReport)
+                        QueryWorkingTimes(timeSpan);
+                    else
+                    { }
+                }
             }
         }
 
@@ -258,7 +267,7 @@ task. Open an elevated command prompt.
                 return Path.GetDirectoryName(path);
             }
         }
-        private static void QueryWorkingTimes()
+        private static void QueryWorkingTimes(string timeSpan)
         {
 #if !DEBUG
             TimeStampCollection col = DecryptAndDeserialize<TimeStampCollection>(dbFile, GetKey());
@@ -325,7 +334,52 @@ task. Open an elevated command prompt.
                         User = Environment.UserName
                     });
 #endif
-            Console.WriteLine(col.ToString());            
+            col.TimeStamps.Sort();
+            DateTime dtIn = DateTime.MinValue;
+            DateTime dtOut = DateTime.MinValue;
+            DateTime currentDay = DateTime.MinValue;
+
+            List<string> days = new List<string>();
+
+            for (int i = 0; i < col.TimeStamps.Count; i++)
+            {
+                DateTime nextDay = (i < col.TimeStamps.Count - 1) ? col.TimeStamps[i + 1].Stamp.Date : DateTime.Now.Date;
+
+                if (currentDay == DateTime.MinValue || nextDay > currentDay)//1st run
+                {
+#if DEBUG
+                    Console.WriteLine("Today is {0}, the next entry is from {1}; Changing day", currentDay, nextDay);
+#endif
+                    if (DateTime.MinValue != dtIn && DateTime.MinValue != dtOut && dtIn.Date == dtOut.Date)
+                        PrintTime(dtIn, dtOut);
+
+                    currentDay = col.TimeStamps[i].Stamp.Date;
+                    if (col.TimeStamps[i].Direction == Direction.In)//first unlock is start of work
+                    {
+                        dtIn = col.TimeStamps[i].Stamp;
+                        dtOut = DateTime.MinValue;
+                    }
+                }
+                if (col.TimeStamps[i].Direction == Direction.Out && (nextDay > currentDay))//lock is end of work
+                    dtOut = col.TimeStamps[i].Stamp;
+            }
+            PrintTime(dtIn, dtOut);
+        }
+
+        private static void PrintTime(DateTime dtIn, DateTime dtOut)
+        {
+            try
+            {
+                if (dtOut == DateTime.MinValue)
+                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and till now ({2:HH\\:mm}) {3:hh\\:mm} h of work", dtIn.Date, dtIn, DateTime.Now, (DateTime.Now - dtIn));
+                else
+                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and {2:HH\\:mm} out. {3:hh\\:mm} h of work", dtIn.Date, dtIn, dtOut, (dtOut - dtIn));
+            }
+            catch (FormatException)
+            {
+                Console.Error.WriteLine("dtIn {0}", dtIn);
+                Console.Error.WriteLine("dtOut {0}", dtOut);
+            }
         }
 
         private static void LogTimeStamp(string direction)
