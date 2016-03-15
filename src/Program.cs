@@ -2,13 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
 using Microsoft.Win32.TaskScheduler;
-using System.Reflection; 
+using System.Reflection;
+using percip.io.Properties;
 
 namespace percip.io
 {
@@ -39,6 +36,7 @@ namespace percip.io
             bool init = false;
             bool deInit = false;
             bool help = false;
+            bool delete = false;
             string inject = string.Empty;
 
             var configuration = CommandLineParserConfigurator
@@ -47,6 +45,7 @@ namespace percip.io
                 .WithSwitch("r", () => raw = true).HavingLongAlias("raw").DescribedBy("Get all logged events")
                 .WithSwitch("i", () => init = true).HavingLongAlias("init").DescribedBy("Create windows tasks (you need elevated permissions for this one!")
                 .WithSwitch("d", () => deInit = true).HavingLongAlias("deinit").DescribedBy("Remove windows tasks (you need elevated permissions for this one!")
+                .WithSwitch("del", () => delete = true).HavingLongAlias("delete").DescribedBy("Delete all Configuration")
                 .WithSwitch("h", () => help = true).HavingLongAlias("help").DescribedBy("Show this usage screen.")
                 .WithNamed("j", I => inject = I).HavingLongAlias("inject").DescribedBy("Time|Direction\"", "Use this for debugging only! You can inject timestamps. 1 for lock, 0 for unlock")
                 .WithPositional(d => direction = d).DescribedBy("lock", "tell me to \"lock\" for \"out\" and keep empty for \"in\"")
@@ -65,6 +64,11 @@ namespace percip.io
                 if (help)
                 {
                     ShowUsage(configuration);
+                    Environment.Exit((int)ExitCode.OK);
+                }
+                if(delete)
+                {
+                    Settings.Default.Reset();
                     Environment.Exit((int)ExitCode.OK);
                 }
                 if (init)
@@ -264,67 +268,67 @@ task. Open an elevated command prompt.
 #if !DEBUG
             TimeStampCollection col = Saver.Load<TimeStampCollection>(dbFile);
 #else
-                    TimeStampCollection col = new TimeStampCollection();
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.In,
-                        Stamp = new DateTime(2015, 01, 20, 8, 30, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.Out,
-                        Stamp = new DateTime(2015, 01, 20,12, 30, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.In,
-                        Stamp = new DateTime(2015, 01, 20, 12, 45, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.Out,
-                        Stamp = new DateTime(2015, 01, 20, 16, 35, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.In,
-                        Stamp = new DateTime(2015, 01, 21, 8, 00, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.Out,
-                        Stamp = new DateTime(2015, 01, 21, 11, 45, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.In,
-                        Stamp = new DateTime(2015, 01, 21, 12, 30, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.Out,
-                        Stamp = new DateTime(2015, 01, 21, 18, 58, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.In,
-                        Stamp = new DateTime(2015, 01, 22, 8, 30, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.Out,
-                        Stamp = new DateTime(2015, 01, 22, 16, 30, 0),
-                        User = Environment.UserName
-                    });
+            TimeStampCollection col = new TimeStampCollection();
+            col.TimeStamps.Add(new TimeStamp()
+            {
+                Direction = Direction.In,
+                Stamp = new DateTime(2015, 01, 20, 8, 30, 0),
+                User = Environment.UserName
+            });
+            col.TimeStamps.Add(new TimeStamp()
+            {
+                Direction = Direction.Out,
+                Stamp = new DateTime(2015, 01, 20, 12, 30, 0),
+                User = Environment.UserName
+            });
+            col.TimeStamps.Add(new TimeStamp()
+            {
+                Direction = Direction.In,
+                Stamp = new DateTime(2015, 01, 20, 12, 45, 0),
+                User = Environment.UserName
+            });
+            col.TimeStamps.Add(new TimeStamp()
+            {
+                Direction = Direction.Out,
+                Stamp = new DateTime(2015, 01, 20, 16, 35, 0),
+                User = Environment.UserName
+            });
+            col.TimeStamps.Add(new TimeStamp()
+            {
+                Direction = Direction.In,
+                Stamp = new DateTime(2015, 01, 21, 8, 00, 0),
+                User = Environment.UserName
+            });
+            col.TimeStamps.Add(new TimeStamp()
+            {
+                Direction = Direction.Out,
+                Stamp = new DateTime(2015, 01, 21, 11, 45, 0),
+                User = Environment.UserName
+            });
+            col.TimeStamps.Add(new TimeStamp()
+            {
+                Direction = Direction.In,
+                Stamp = new DateTime(2015, 01, 21, 12, 30, 0),
+                User = Environment.UserName
+            });
+            col.TimeStamps.Add(new TimeStamp()
+            {
+                Direction = Direction.Out,
+                Stamp = new DateTime(2015, 01, 21, 18, 58, 0),
+                User = Environment.UserName
+            });
+            col.TimeStamps.Add(new TimeStamp()
+            {
+                Direction = Direction.In,
+                Stamp = new DateTime(2015, 01, 22, 8, 30, 0),
+                User = Environment.UserName
+            });
+            col.TimeStamps.Add(new TimeStamp()
+            {
+                Direction = Direction.Out,
+                Stamp = new DateTime(2015, 01, 22, 16, 30, 0),
+                User = Environment.UserName
+            });
 #endif
             col.TimeStamps.Sort();
             DateTime dtIn = DateTime.MinValue;
@@ -389,20 +393,17 @@ task. Open an elevated command prompt.
 
 
             TimeStampCollection col = null;
-            if (File.Exists(dbFile))
+
+            try
             {
-                try
-                {
-                    col = Saver.Load<TimeStampCollection>(dbFile);
-                }
-                catch (CryptographicException ex)
-                {
-                    Console.Error.WriteLine(ex.Message);
-                    Environment.Exit(2);
-                }
+                col = Saver.Load<TimeStampCollection>(dbFile);
             }
-            else
+            catch (FileNotFoundException)
+            {
                 col = new TimeStampCollection();
+            }
+
+
 
             col.TimeStamps.Add(stamp);
             Saver.Save<TimeStampCollection>(dbFile, col);

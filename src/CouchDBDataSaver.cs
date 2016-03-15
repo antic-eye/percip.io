@@ -1,45 +1,79 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.Serialization.Json;
 using System.IO;
+using Newtonsoft.Json.Linq;
+using percip.io.Properties;
+using LoveSeat;
 
 namespace percip.io
 {
     class CouchDBDataSaver : IDataSaver
     {
-        public T Load<T>(string filename)
+        public T Load<T>(string filename) where T : class
         {
+            //#if DEBUG
+            //            Settings.Default["Docid"] = null;
+            //#endif
+            CouchDatabase db = connect(Path.GetFileNameWithoutExtension(filename));
             try
             {
-                using (var fs = File.Open(filename, FileMode.Open))
-                {
-                    return (T)(new DataContractJsonSerializer(typeof(T))).ReadObject(fs);
-                }
+                return db.GetDocument(Settings.Default["Docid"] as string).ToObject<T>();
             }
-            catch (FileNotFoundException)
+
+            catch (Exception ex)
             {
-                Console.Error.WriteLine("{0} could not be found", filename);
+
+                Console.Error.WriteLine(ex.Message);
                 Environment.Exit(-1);
                 return default(T);
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine("Exception during run: {0}", ex.Message);
-                Environment.Exit(-2);
-                return default(T);
-            }
+
+
         }
 
-        public void Save<T>(string filename, T obj)
+        private CouchDatabase connect(string dbname)
         {
+            var config = Settings.Default;
+            var client = new CouchClient((string)config["CouchIP"], (int)config["CouchPort"], (string)config["CouchAdmin"], (string)config["CouchPW"], (bool)config["isHTTPS"], AuthenticationType.Basic);
+            if (!client.HasDatabase(dbname))
+            {
+                client.CreateDatabase(dbname);
+            }
+            var db = client.GetDatabase(dbname);
+            return db;
+        }
+
+        public void Save<T>(string filename, T obj) where T : class
+        {
+            CouchDatabase db = connect(Path.GetFileNameWithoutExtension(filename));
+            Document working;
+            //#if DEBUG
+            //            Settings.Default["Docid"] = null;
+            //#endif
             try
             {
-                using (var fs = File.Open(filename, FileMode.Create))
+                if (Settings.Default["Docid"] != null && Settings.Default["Docid"] as string != "")
                 {
-                new DataContractJsonSerializer(typeof(T)).WriteObject(fs, obj);
+                    working = db.GetDocument(Settings.Default["Docid"] as string);
+                    var reader = working.CreateReader();
+                    var writer = new JObject();
+
+                    var temp = JToken.Load(reader).Cast<JToken>().ToArray();
+                    temp[2] = JToken.FromObject(obj).First;
+                    foreach (var item in temp)
+                    {
+                        writer.Add(item);
+                    }
+                    db.SaveDocument(new Document(writer));
+                }
+                else
+                {
+                    working = new Document(JToken.FromObject(obj).ToString());
+                    working.Add("_id", JProperty.FromObject(obj.ToString().Split('.').Last() + "-" + obj.GetHashCode() + "-" + this.GetHashCode()));
+                    Settings.Default["Docid"] = working.Value<string>("_id");
+                    Settings.Default.Save();
+                    Console.WriteLine(working.Last);
+                    db.SaveDocument(working);
                 }
             }
             catch (Exception ex)
@@ -49,4 +83,5 @@ namespace percip.io
             }
         }
     }
+
 }
