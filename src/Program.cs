@@ -261,101 +261,211 @@ task. Open an elevated command prompt.
         }
         private static void QueryWorkingTimes()
         {
-#if !DEBUG
+//#if !DEBUG
             TimeStampCollection col = Saver.Load<TimeStampCollection>(dbFile);
-#else
-                    TimeStampCollection col = new TimeStampCollection();
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.In,
-                        Stamp = new DateTime(2015, 01, 20, 8, 30, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.Out,
-                        Stamp = new DateTime(2015, 01, 20,12, 30, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.In,
-                        Stamp = new DateTime(2015, 01, 20, 12, 45, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.Out,
-                        Stamp = new DateTime(2015, 01, 20, 16, 35, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.In,
-                        Stamp = new DateTime(2015, 01, 21, 8, 00, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.Out,
-                        Stamp = new DateTime(2015, 01, 21, 11, 45, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.In,
-                        Stamp = new DateTime(2015, 01, 21, 12, 30, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.Out,
-                        Stamp = new DateTime(2015, 01, 21, 18, 58, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.In,
-                        Stamp = new DateTime(2015, 01, 22, 8, 30, 0),
-                        User = Environment.UserName
-                    });
-                    col.TimeStamps.Add(new TimeStamp()
-                    {
-                        Direction = Direction.Out,
-                        Stamp = new DateTime(2015, 01, 22, 16, 30, 0),
-                        User = Environment.UserName
-                    });
-#endif
+//#else
+//                    TimeStampCollection col = new TimeStampCollection();
+//                    col.TimeStamps.Add(new TimeStamp()
+//                    {
+//                        Direction = Direction.In,
+//                        Stamp = new DateTime(2015, 01, 20, 8, 30, 0),
+//                        User = Environment.UserName
+//                    });
+//                    col.TimeStamps.Add(new TimeStamp()
+//                    {
+//                        Direction = Direction.Out,
+//                        Stamp = new DateTime(2015, 01, 20,12, 30, 0),
+//                        User = Environment.UserName
+//                    });
+//                    col.TimeStamps.Add(new TimeStamp()
+//                    {
+//                        Direction = Direction.In,
+//                        Stamp = new DateTime(2015, 01, 20, 12, 45, 0),
+//                        User = Environment.UserName
+//                    });
+//                    col.TimeStamps.Add(new TimeStamp()
+//                    {
+//                        Direction = Direction.Out,
+//                        Stamp = new DateTime(2015, 01, 20, 16, 35, 0),
+//                        User = Environment.UserName
+//                    });
+//                    col.TimeStamps.Add(new TimeStamp()
+//                    {
+//                        Direction = Direction.In,
+//                        Stamp = new DateTime(2015, 01, 21, 8, 00, 0),
+//                        User = Environment.UserName
+//                    });
+//                    col.TimeStamps.Add(new TimeStamp()
+//                    {
+//                        Direction = Direction.Out,
+//                        Stamp = new DateTime(2015, 01, 21, 11, 45, 0),
+//                        User = Environment.UserName
+//                    });
+//                    col.TimeStamps.Add(new TimeStamp()
+//                    {
+//                        Direction = Direction.In,
+//                        Stamp = new DateTime(2015, 01, 21, 12, 30, 0),
+//                        User = Environment.UserName
+//                    });
+//                    col.TimeStamps.Add(new TimeStamp()
+//                    {
+//                        Direction = Direction.Out,
+//                        Stamp = new DateTime(2015, 01, 21, 18, 58, 0),
+//                        User = Environment.UserName
+//                    });
+//                    col.TimeStamps.Add(new TimeStamp()
+//                    {
+//                        Direction = Direction.In,
+//                        Stamp = new DateTime(2015, 01, 22, 8, 30, 0),
+//                        User = Environment.UserName
+//                    });
+//                    col.TimeStamps.Add(new TimeStamp()
+//                    {
+//                        Direction = Direction.Out,
+//                        Stamp = new DateTime(2015, 01, 22, 16, 30, 0),
+//                        User = Environment.UserName
+//                    });
+//#endif
             col.TimeStamps.Sort();
             DateTime dtIn = DateTime.MinValue;
             DateTime dtOut = DateTime.MinValue;
             DateTime currentDay = DateTime.MinValue;
+            bool overlap = false;
+            bool first = true;
+            bool changed = false;
+            bool retryday = false;
 
             List<string> days = new List<string>();
 
             for (int i = 0; i < col.TimeStamps.Count; i++)
             {
                 DateTime nextDay = (i < col.TimeStamps.Count - 1) ? col.TimeStamps[i + 1].Stamp.Date : DateTime.Now.Date;
-
-                if (currentDay == DateTime.MinValue || nextDay > currentDay)//1st run
+                if (!overlap && (currentDay == DateTime.MinValue || nextDay > currentDay|| retryday))//1st run
                 {
 #if DEBUG
                     Console.WriteLine("Today is {0}, the next entry is from {1}; Changing day", currentDay, nextDay);
 #endif
-                    if (DateTime.MinValue != dtIn && DateTime.MinValue != dtOut && dtIn.Date == dtOut.Date)
+                    if (DateTime.MinValue != dtIn && DateTime.MinValue != dtOut && dtIn.Date == dtOut.Date&&!retryday)
                         PrintTime(dtIn, dtOut);
 
                     currentDay = col.TimeStamps[i].Stamp.Date;
-                    if (col.TimeStamps[i].Direction == Direction.In)//first unlock is start of work
+                    retryday = false;
+                    if (first)
                     {
-                        dtIn = col.TimeStamps[i].Stamp;
-                        dtOut = DateTime.MinValue;
+                        if (col.TimeStamps[i].Direction == Direction.In)//first unlock is start of work
+                        {
+                            dtIn = col.TimeStamps[i].Stamp;
+                            dtOut = DateTime.MinValue;
+                            first = false;
+                        }
+                        else
+                        {
+                            changed = true;
+                            retryday = true;
+                            Console.Write("The {0:yyyy-MM-dd ddd} starts with an Out at {1}. Do you want to add an In or delete the wrong Entry?[in/DEL]",currentDay,col.TimeStamps[i].Stamp);
+                            string answer = Console.ReadLine();
+                            switch (answer)
+                            {
+                                case "in":
+                                case "i":
+                                case "In":
+                                    col = insert(col,i);
+                                    i -= 2;
+                                    break;
+                                case "DEL":
+                                case "del":
+                                case "Del":
+                                case "d":
+                                default:
+                                    col.TimeStamps.RemoveAt(i);
+                                    i--;
+                                    break;
+                            }
+                        }
                     }
                 }
-                if (col.TimeStamps[i].Direction == Direction.Out && (nextDay > currentDay))//lock is end of work
+                if (col.TimeStamps[i].Direction == Direction.Out && ((nextDay > currentDay) || overlap))//lock is end of work
+                {
                     dtOut = col.TimeStamps[i].Stamp;
+                    overlap = false;
+                    first = true;
+                }
+                else {
+                    if (nextDay > currentDay && col.TimeStamps[i].Direction == Direction.In &&!first)
+                    {
+                        changed = true;
+                        Console.Write("Your last entry from {0:yyyy-MM-dd ddd} is In. Did you really work over night? [y/N]", currentDay);
+                        string answer = Console.ReadLine();
+                        switch (answer)
+                        {
+                            case "y":
+                            case "j":
+                            case "Y":
+                            case "J":
+                                overlap = true;
+                                first = true;
+                                break;
+                            case "n":
+                            case "N":
+                            default:
+                                col = Repair(col, currentDay, i);
+                                i--;
+                                break;
+                        }
+                    }
+                }
+                
             }
             PrintTime(dtIn, dtOut);
+            if (changed)
+            {
+                Saver.Save(dbFile, col);
+            }
+        }
+
+        private static TimeStampCollection insert(TimeStampCollection col, int i)
+        {
+            Console.Write("Please enter the TimeStamp to add:");
+            string answer = Console.ReadLine();
+            try {
+                TimeStamp toadd = new TimeStamp();
+                toadd.Stamp = DateTime.Parse(answer);
+                toadd.Direction = Direction.In;
+                toadd.User = "REPAIR";
+                col.TimeStamps.Insert(i - 1, toadd);
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("The TimeStamp could not be read. Please try again");
+                col = insert(col, i);
+            }
+            return col;
+        }
+
+        private static TimeStampCollection Repair(TimeStampCollection col, DateTime currentDay, int i)
+        {
+            string answer;
+            Console.Write("Please enter the time you stopped working on {0:yyyy-MM-dd ddd}. [{1}]", currentDay, col.TimeStamps[i].Stamp.AddSeconds(1));
+            answer = Console.ReadLine();
+            if (answer == "")
+            {
+                answer = col.TimeStamps[i].Stamp.AddSeconds(1).ToString();
+            }
+            try
+            {
+                TimeStamp toadd = new TimeStamp();
+                toadd.Stamp = DateTime.Parse(answer);
+                toadd.Direction = Direction.Out;
+                toadd.User = "REPAIR";
+                col.TimeStamps.Insert(i + 1, toadd);
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("The Timestamp could not be read, please try again or simply press Enter to enter the shown Timestamp.");
+                col=Repair(col, currentDay, i);
+            }
+
+            return col;
         }
 
         private static void PrintTime(DateTime dtIn, DateTime dtOut)
