@@ -78,7 +78,7 @@ namespace percip.io
             return sMyKey;
         }
 
-        public T Load<T>(string filename)
+        public T Load<T>(string filename) where T : class
         {
             return DecryptAndDeserialize<T>(filename, GetKey());
         }
