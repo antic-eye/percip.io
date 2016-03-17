@@ -553,6 +553,7 @@ task. Open an elevated command prompt.
             {
                 TimeStamp toadd = new TimeStamp();
                 toadd.Stamp = DateTime.Parse(answer);
+                if (toadd.Stamp.Date != currentDay) throw new Exception();
                 toadd.Direction = Direction.Out;
                 toadd.User = "REPAIR";
                 col.TimeStamps.Insert(i + 1, toadd);
