@@ -4,6 +4,7 @@ using System.IO;
 using Newtonsoft.Json.Linq;
 using percip.io.Properties;
 using LoveSeat;
+using System.Reflection;
 
 namespace percip.io
 {
@@ -15,27 +16,35 @@ namespace percip.io
             //            Settings.Default["Docid"] = null;
             //#endif
             CouchDatabase db;
-            try {
-                 db = connect(Path.GetFileNameWithoutExtension(filename));
+            IDataSaver Saver = new XMLDataSaver();
+            try
+            {
+                db = connect(Path.GetFileNameWithoutExtension(filename));
             }
             catch
             {
-                return new XMLDataSaver().Load<T>(filename);
+                return Saver.Load<T>(filename);
+            }
+            TimeStampCollection myversion = null;
+            if (typeof(T) == typeof(TimeStampCollection))
+            {
+                myversion = Saver.Load<TimeStampCollection>(filename);
             }
             try
             {
-                return db.GetDocument(Settings.Default["Docid"] as string).ToObject<T>();
+                Document data = db.GetDocument(Settings.Default["Docid"] as string);
+                if (typeof(T) == typeof(TimeStampCollection) && data.ToObject<TimeStampCollection>().Fingerprint != myversion.Fingerprint)
+                {
+                    return myversion as T;
+                }
+                return data.ToObject<T>();
             }
-
             catch (Exception ex)
             {
-
                 Console.Error.WriteLine(ex.Message);
                 Environment.Exit(-1);
                 return default(T);
             }
-
-
         }
 
         private CouchDatabase connect(string dbname)
@@ -52,8 +61,19 @@ namespace percip.io
 
         public void Save<T>(string filename, T obj) where T : class
         {
-            new XMLDataSaver().Save<T>(filename, obj);
-            CouchDatabase db = connect(Path.GetFileNameWithoutExtension(filename));
+            if (typeof(T) == typeof(TimeStampCollection))
+            {
+                var me = obj as TimeStampCollection;
+                me.Fingerprint = me.TimeStamps.GetHashCode();
+                obj = me as T;
+            }
+            new XMLDataSaver().Save(filename, obj);
+            CouchDatabase db;
+            try
+            {
+                db = connect(Path.GetFileNameWithoutExtension(filename));
+            }
+            catch { return; }
             Document working;
             //#if DEBUG
             //            Settings.Default["Docid"] = null;
