@@ -244,9 +244,11 @@ Here are your times:
                 do
                 {
                     col.TimeStamps[start++].Direction = Direction.BR;
-                } while (start < end);
+                } while (start <= end);
             }
             else interactivebreaktime(0);
+            Saver.Save(dbFile, col);
+            Environment.Exit(0);
         }
 
         private static void ShowUsage(CommandLineConfiguration configuration, string parseResult = "")
@@ -569,15 +571,40 @@ task. Open an elevated command prompt.
             try
             {
                 if (dtOut == DateTime.MinValue)
-                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and till now ({2:HH\\:mm}) {3:hh\\:mm} h of work", dtIn.Date, dtIn, DateTime.Now, (DateTime.Now - dtIn));
+                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and till now ({2:HH\\:mm}) {3:hh\\:mm} h of work", dtIn.Date, dtIn, DateTime.Now, breaked(DateTime.Now,dtIn));
                 else
-                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and {2:HH\\:mm} out. {3:hh\\:mm} h of work", dtIn.Date, dtIn, dtOut, (dtOut - dtIn));
+                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and {2:HH\\:mm} out. {3:hh\\:mm} h of work", dtIn.Date, dtIn, dtOut, breaked(dtOut,dtIn));
             }
             catch (FormatException)
             {
                 Console.Error.WriteLine("dtIn {0}", dtIn);
                 Console.Error.WriteLine("dtOut {0}", dtOut);
             }
+        }
+
+        private static TimeSpan breaked(DateTime dtOut, DateTime dtIn)
+        {
+            TimeStampCollection col = Saver.Load<TimeStampCollection>(dbFile);
+            List<TimeStamp> range = col.TimeStamps.Where(me => dtIn <= me.Stamp && me.Stamp <= dtOut).ToList();
+            range.Sort();
+            TimeSpan result = dtOut - dtIn;
+            try
+            {
+                TimeStamp first;
+                TimeStamp second;
+                for (int i = 0; i < range.Count; i++)
+                {
+                    first = range[i];
+                    second = range[i + 1];
+                    if (first.Direction == Direction.BR && second.Direction == Direction.BR)
+                    {
+                        result -= second.Stamp - first.Stamp;
+                    }
+                }
+            }
+            catch { }
+            return result;
+
         }
 
         private static void LogTimeStamp(string direction)
