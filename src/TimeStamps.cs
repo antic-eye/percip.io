@@ -53,6 +53,7 @@ namespace percip.io
     public enum Direction
     {
         In,
-        Out
+        Out,
+        BR
     }
 }

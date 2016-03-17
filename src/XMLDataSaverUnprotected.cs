@@ -33,7 +33,7 @@ namespace percip.io
             }
         }
 
-        public void Save<T>(string filename, T obj) where T : class
+        public void Save<T>(string filename, T obj) 
         {
             try
             {
