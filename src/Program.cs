@@ -159,6 +159,99 @@ namespace percip.io
             }
         }
 
+<<<<<<< HEAD
+=======
+        private static void interactivebreaktime(int offset)
+        {
+            Console.Clear();
+            Console.WriteLine(@"
+    ____                  __                                              
+   / __ )________  ____ _/ /______ ___  ____ _____  ____ _____ ____  _____
+  / __  / ___/ _ \/ __ `/ //_/ __ `__ \/ __ `/ __ \/ __ `/ __ `/ _ \/ ___/
+ / /_/ / /  /  __/ /_/ / ,< / / / / / / /_/ / / / / /_/ / /_/ /  __/ /    
+/_____/_/   \___/\__,_/_/|_/_/ /_/ /_/\__,_/_/ /_/\__,_/\__, /\___/_/     
+                                                       /____/             
+Here are your times:
+
+");
+            TimeStampCollection col = Saver.Load<TimeStampCollection>(dbFile);
+            var max = col.TimeStamps.Count;
+            for (int i = 1; i <= 10; i++)
+            {
+                if (max - offset - i > -1)
+                {
+                    Console.WriteLine("\t\t({0})\t{1}\t{2}", i, col.TimeStamps[max - offset - i].Stamp, col.TimeStamps[max - offset - i].Direction.ToString());
+                }
+                else
+                {
+                    Console.WriteLine("\t\tNo more times");
+                    break;
+                }
+            }
+            Console.WriteLine("\t\t(11)\tNone of the above");
+            Console.Write("\nWhich ist the begin of your break?[1-10] ");
+            try
+            {
+                int answer = Convert.ToInt32(Console.ReadLine());
+                if (answer == 11)
+                {
+                    interactivebreaktime(offset + 10);
+                    return;
+                }
+                TimeStamp start = col.TimeStamps[max - offset - answer];
+                if (start.Direction != Direction.Out) throw new DirectionException();
+                interactivesteptwo(max - offset - answer);
+
+            }
+            catch (DirectionException)
+            {
+                Console.Write("You chose an illegal time. Please retry!");
+                interactivebreaktime(offset);
+            }
+            catch (Exception)
+            {
+                Console.Write("There is some Problem with you answer. Please retry!");
+                interactivebreaktime(offset);
+            }
+
+        }
+
+        private static void interactivesteptwo(int start)
+        {
+            Console.WriteLine("Possible end:");
+            TimeStampCollection col = Saver.Load<TimeStampCollection>(dbFile);
+            var max = col.TimeStamps.Count;
+            for (int i = 1; i <= 15; i++)
+            {
+                if (max - start + i > -1)
+                {
+                    Console.WriteLine("\t\t({0})\t{1}\t{2}", i, col.TimeStamps[start + i].Stamp, col.TimeStamps[start + i].Direction.ToString());
+                }
+                else
+                {
+                    Console.WriteLine("\t\tNo more times");
+                    break;
+                }
+            }
+            Console.Write("\nPlease choose:[1-15] ");
+            int answer = Convert.ToInt32(Console.ReadLine());
+            int end = start + answer;
+            TimeStamp endStamp = col.TimeStamps[end];
+            if (endStamp.Direction != Direction.In) throw new DirectionException();
+            Console.Write("Are you sure to irreversibly mark {0} to {1} as your break?[Y/n] ", col.TimeStamps[start].Stamp, col.TimeStamps[end].Stamp);
+            if (Console.ReadLine() != "n")
+            {
+                do
+                {
+                    col.TimeStamps[start++].Direction = Direction.BR;
+                } while (start <= end);
+            }
+            else interactivebreaktime(0);
+            Saver.Save(dbFile, col);
+            Environment.Exit(0);
+        }
+
+>>>>>>> 69c5c35... add and implement methods for recording breaktime
         private static void ShowUsage(CommandLineConfiguration configuration, string parseResult = "")
         {
             Usage usage = new UsageComposer(configuration).Compose();
@@ -367,15 +460,40 @@ task. Open an elevated command prompt.
             try
             {
                 if (dtOut == DateTime.MinValue)
-                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and till now ({2:HH\\:mm}) {3:hh\\:mm} h of work", dtIn.Date, dtIn, DateTime.Now, (DateTime.Now - dtIn));
+                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and till now ({2:HH\\:mm}) {3:hh\\:mm} h of work", dtIn.Date, dtIn, DateTime.Now, breaked(DateTime.Now,dtIn));
                 else
-                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and {2:HH\\:mm} out. {3:hh\\:mm} h of work", dtIn.Date, dtIn, dtOut, (dtOut - dtIn));
+                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and {2:HH\\:mm} out. {3:hh\\:mm} h of work", dtIn.Date, dtIn, dtOut, breaked(dtOut,dtIn));
             }
             catch (FormatException)
             {
                 Console.Error.WriteLine("dtIn {0}", dtIn);
                 Console.Error.WriteLine("dtOut {0}", dtOut);
             }
+        }
+
+        private static TimeSpan breaked(DateTime dtOut, DateTime dtIn)
+        {
+            TimeStampCollection col = Saver.Load<TimeStampCollection>(dbFile);
+            List<TimeStamp> range = col.TimeStamps.Where(me => dtIn <= me.Stamp && me.Stamp <= dtOut).ToList();
+            range.Sort();
+            TimeSpan result = dtOut - dtIn;
+            try
+            {
+                TimeStamp first;
+                TimeStamp second;
+                for (int i = 0; i < range.Count; i++)
+                {
+                    first = range[i];
+                    second = range[i + 1];
+                    if (first.Direction == Direction.BR && second.Direction == Direction.BR)
+                    {
+                        result -= second.Stamp - first.Stamp;
+                    }
+                }
+            }
+            catch { }
+            return result;
+
         }
 
         private static void LogTimeStamp(string direction)
