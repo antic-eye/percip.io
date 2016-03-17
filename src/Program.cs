@@ -31,7 +31,7 @@ namespace percip.io
     {
         private static string dbFile = Environment.CurrentDirectory + "\\times.db";
         private static string taskPrefix = "__percip.io__";
-        private static IDataSaver Saver = new CouchDBDataSaver();
+        private static IDataSaver Saver;
 
         static void Main(string[] args)
         {
@@ -44,6 +44,22 @@ namespace percip.io
             bool delete = false;
             string inject = string.Empty;
             bool pause = false;
+            switch (Settings.Default["DataMode"] as string)
+            {
+                case "local":
+                    Saver = new XMLDataSaver();
+                    break;
+                case "remote":
+                    Saver = new CouchDBDataSaver();
+                    break;
+                case "debug":
+                    Saver = new XMLDataSaverUnprotected();
+                    break;
+                default:
+                    Console.WriteLine("Wrong Option DataMode! Please update DataMode in config to fit local or remote.");
+                    Environment.Exit(-1);
+                    break;
+            }
 
             var configuration = CommandLineParserConfigurator
                 .Create()

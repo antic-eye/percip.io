@@ -157,8 +157,8 @@
     </Compile>
     <Compile Include="Settings.cs" />
     <Compile Include="TimeStamps.cs" />
-    <None Include="XMLDataSaver.cs" />
-    <None Include="XMLDataSaverUnprotected.cs" />
+    <Compile Include="XMLDataSaver.cs" />
+    <Compile Include="XMLDataSaverUnprotected.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
