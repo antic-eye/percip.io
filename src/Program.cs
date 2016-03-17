@@ -2,14 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
 using Microsoft.Win32.TaskScheduler;
 using System.Reflection;
 using System.Runtime.Serialization;
+using percip.io.Properties;
 
 namespace percip.io
 {
@@ -30,7 +27,7 @@ namespace percip.io
     {
         private static string dbFile = Environment.CurrentDirectory + "\\times.db";
         private static string taskPrefix = "__percip.io__";
-        private static IDataSaver Saver = new XMLDataSaver();
+        private static IDataSaver Saver = new CouchDBDataSaver();
 
         static void Main(string[] args)
         {
@@ -40,6 +37,7 @@ namespace percip.io
             bool init = false;
             bool deInit = false;
             bool help = false;
+            bool delete = false;
             string inject = string.Empty;
             bool pause = false;
 
@@ -50,6 +48,7 @@ namespace percip.io
                 .WithSwitch("i", () => init = true).HavingLongAlias("init").DescribedBy("Create windows tasks (you need elevated permissions for this one!")
                 .WithSwitch("d", () => deInit = true).HavingLongAlias("deinit").DescribedBy("Remove windows tasks (you need elevated permissions for this one!")
                 .WithSwitch("b", () => pause = true).HavingLongAlias("pause").DescribedBy("Manage your breaks")
+                .WithSwitch("del", () => delete = true).HavingLongAlias("delete").DescribedBy("Delete all Configuration")
                 .WithSwitch("h", () => help = true).HavingLongAlias("help").DescribedBy("Show this usage screen.")
                 .WithNamed("j", I => inject = I).HavingLongAlias("inject").DescribedBy("Time|Direction\"", "Use this for debugging only! You can inject timestamps. 1 for lock, 0 for unlock")
                 .WithPositional(d => direction = d).DescribedBy("lock", "tell me to \"lock\" for \"out\" and keep empty for \"in\"")
@@ -68,6 +67,11 @@ namespace percip.io
                 if (help)
                 {
                     ShowUsage(configuration);
+                    Environment.Exit((int)ExitCode.OK);
+                }
+                if(delete)
+                {
+                    Settings.Default.Reset();
                     Environment.Exit((int)ExitCode.OK);
                 }
                 if (init)
@@ -622,20 +626,17 @@ task. Open an elevated command prompt.
 
 
             TimeStampCollection col = null;
-            if (File.Exists(dbFile))
+
+            try
             {
-                try
-                {
-                    col = Saver.Load<TimeStampCollection>(dbFile);
-                }
-                catch (CryptographicException ex)
-                {
-                    Console.Error.WriteLine(ex.Message);
-                    Environment.Exit(2);
-                }
+                col = Saver.Load<TimeStampCollection>(dbFile);
             }
-            else
+            catch (FileNotFoundException)
+            {
                 col = new TimeStampCollection();
+            }
+
+
 
             col.TimeStamps.Add(stamp);
             Saver.Save<TimeStampCollection>(dbFile, col);

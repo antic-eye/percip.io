@@ -83,7 +83,7 @@ namespace percip.io
             return DecryptAndDeserialize<T>(filename, GetKey());
         }
 
-        public void Save<T>(string filename, T obj)
+        public void Save<T>(string filename, T obj) where T : class
         {
             EncryptAndSerialize<T>(filename, obj, GetKey());
         }
