@@ -14,7 +14,14 @@ namespace percip.io
             //#if DEBUG
             //            Settings.Default["Docid"] = null;
             //#endif
-            CouchDatabase db = connect(Path.GetFileNameWithoutExtension(filename));
+            CouchDatabase db;
+            try {
+                 db = connect(Path.GetFileNameWithoutExtension(filename));
+            }
+            catch
+            {
+                return new XMLDataSaver().Load<T>(filename);
+            }
             try
             {
                 return db.GetDocument(Settings.Default["Docid"] as string).ToObject<T>();
@@ -45,6 +52,7 @@ namespace percip.io
 
         public void Save<T>(string filename, T obj) where T : class
         {
+            new XMLDataSaver().Save<T>(filename, obj);
             CouchDatabase db = connect(Path.GetFileNameWithoutExtension(filename));
             Document working;
             //#if DEBUG
