@@ -9,15 +9,15 @@ namespace percip.io
     public class TimeStampCollection
     {
         private List<TimeStamp> stamps = new List<TimeStamp>();
-        private int fingerprint = -1;
+        private string fingerprint = "";
 
-        public int Fingerprint
+        public string Fingerprint
         {
             get
             {
-                if (fingerprint == -1)
+                if (fingerprint == "")
                 {
-                    fingerprint = TimeStamps.GetHashCode();
+                    fingerprint = Guid.NewGuid().ToString();
                 }
                 return fingerprint;
             }

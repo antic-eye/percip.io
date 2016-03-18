@@ -64,7 +64,7 @@ namespace percip.io
             if (typeof(T) == typeof(TimeStampCollection))
             {
                 var me = obj as TimeStampCollection;
-                me.Fingerprint = me.TimeStamps.GetHashCode();
+                me.Fingerprint = Guid.NewGuid().ToString();
                 obj = me as T;
             }
             new XMLDataSaver().Save(filename, obj);
