@@ -208,7 +208,7 @@ Here are your times:
                 Console.Write("You chose an illegal time. Please retry!");
                 interactivebreaktime(offset);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Console.Write("There is some Problem with you answer. Please retry!");
                 interactivebreaktime(offset);
@@ -223,7 +223,7 @@ Here are your times:
             var max = col.TimeStamps.Count;
             for (int i = 1; i <= 15; i++)
             {
-                if (max - start + i > -1)
+                if (start + i < max)
                 {
                     Console.WriteLine("\t\t({0})\t{1}\t{2}", i, col.TimeStamps[start + i].Stamp, col.TimeStamps[start + i].Direction.ToString());
                 }
