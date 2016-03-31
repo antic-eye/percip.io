@@ -41,8 +41,10 @@ namespace percip.io
             bool init = false;
             bool deInit = false;
             bool help = false;
+            bool htmlReport = false;
             string inject = string.Empty;
             string tags = string.Empty;
+            string timeSpan = string.Empty;
             bool pause = false;
 
             var configuration = CommandLineParserConfigurator
@@ -53,6 +55,7 @@ namespace percip.io
                 .WithSwitch("d", () => deInit = true).HavingLongAlias("deinit").DescribedBy("Remove windows tasks (you need elevated permissions for this one!")
                 .WithSwitch("b", () => pause = true).HavingLongAlias("pause").DescribedBy("Manage your breaks")
                 .WithSwitch("h", () => help = true).HavingLongAlias("help").DescribedBy("Show this usage screen.")
+                .WithSwitch("o", () => htmlReport = true).HavingLongAlias("out").DescribedBy("Show html report.")
                 .WithNamed("j", I => inject = I).HavingLongAlias("inject").DescribedBy("Time|Direction\"", "Use this for debugging only! You can inject timestamps. 1 for lock, 0 for unlock")
                 .WithNamed("t", t => tags = t).HavingLongAlias("tags").DescribedBy("timestamp|Tag1,Tag2,...\"", "Tag a timestamp; use ticks for the timestamp (-r shows them)")
                 .WithPositional(d => direction = d).DescribedBy("lock", "tell me to \"lock\" for \"out\" and keep empty for \"in\"")
@@ -194,7 +197,12 @@ namespace percip.io
                 if (!query)
                     LogTimeStamp(direction);
                 else
-                    QueryWorkingTimes();
+                {
+                    if (!htmlReport)
+                        QueryWorkingTimes(timeSpan);
+                    else
+                    { }
+                }
             }
         }
 
@@ -392,7 +400,7 @@ task. Open an elevated command prompt.
                 return Path.GetDirectoryName(path);
             }
         }
-        private static void QueryWorkingTimes()
+        private static void QueryWorkingTimes(string timeSpan)
         {
             //#if !DEBUG
             TimeStampCollection col = Saver.Load<TimeStampCollection>(dbFile);
