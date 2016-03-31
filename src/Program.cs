@@ -7,6 +7,7 @@ using Microsoft.Win32.TaskScheduler;
 using System.Reflection;
 using System.Runtime.Serialization;
 using percip.io.Properties;
+using System.Linq;
 
 namespace percip.io
 {

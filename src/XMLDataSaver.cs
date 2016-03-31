@@ -13,62 +13,66 @@ namespace percip.io
     {
         private T DecryptAndDeserialize<T>(string filename, string encryptionKey)
         {
-            var key = new DESCryptoServiceProvider();
-            int length = encryptionKey.Length / 2;
-            byte[] k = Encoding.ASCII.GetBytes(encryptionKey.Substring(0, length));
-            byte[] iV = Encoding.ASCII.GetBytes(encryptionKey.Substring(length));
-            var d = key.CreateDecryptor(k, iV);
-            try
+            using (var key = new DESCryptoServiceProvider())
             {
-                using (var fs = File.Open(filename, FileMode.Open))
+                int length = encryptionKey.Length / 2;
+                byte[] k = Encoding.ASCII.GetBytes(encryptionKey.Substring(0, length));
+                byte[] iV = Encoding.ASCII.GetBytes(encryptionKey.Substring(length));
+                var d = key.CreateDecryptor(k, iV);
+                try
                 {
-                    using (var cs = new CryptoStream(fs, d, CryptoStreamMode.Read))
+                    using (var fs = File.Open(filename, FileMode.Open))
                     {
-                        return (T)(new XmlSerializer(typeof(T))).Deserialize(cs);
+                        using (var cs = new CryptoStream(fs, d, CryptoStreamMode.Read))
+                        {
+                            return (T)(new XmlSerializer(typeof(T))).Deserialize(cs);
+                        }
                     }
                 }
-            }
-            catch (FileNotFoundException)
-            {
-                Console.Error.WriteLine("{0} could not be found", filename);
-                Environment.Exit(-1);
-                return default(T);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine("Exception during run: {0}", ex.Message);
-                Environment.Exit(-2);
-                return default(T);
+                catch (FileNotFoundException)
+                {
+                    Console.Error.WriteLine("{0} could not be found", filename);
+                    Environment.Exit(-1);
+                    return default(T);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine("Exception during run: {0}", ex.Message);
+                    Environment.Exit(-2);
+                    return default(T);
+                }
             }
         }
 
         private void EncryptAndSerialize<T>(string filename, T obj, string encryptionKey)
         {
-            var key = new DESCryptoServiceProvider();
-            int length = encryptionKey.Length / 2;
-            byte[] k = Encoding.ASCII.GetBytes(encryptionKey.Substring(0, length));
-            byte[] iV = Encoding.ASCII.GetBytes(encryptionKey.Substring(length));
-            var e = key.CreateEncryptor(k, iV);
-            try
+            using (var key = new DESCryptoServiceProvider())
             {
-                using (var fs = File.Open(filename, FileMode.Create))
+                int length = encryptionKey.Length / 2;
+                byte[] k = Encoding.ASCII.GetBytes(encryptionKey.Substring(0, length));
+                byte[] iV = Encoding.ASCII.GetBytes(encryptionKey.Substring(length));
+                var e = key.CreateEncryptor(k, iV);
+                try
                 {
-                    using (var cs = new CryptoStream(fs, e, CryptoStreamMode.Write))
+                    using (var fs = File.Open(filename, FileMode.Create))
                     {
-                        (new XmlSerializer(typeof(T))).Serialize(cs, obj);
+                        using (var cs = new CryptoStream(fs, e, CryptoStreamMode.Write))
+                        {
+                            (new XmlSerializer(typeof(T))).Serialize(cs, obj);
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine(ex.Message);
-                Environment.Exit(-1);
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine(ex.Message);
+                    Environment.Exit(-1);
+                }
             }
         }
 
         private string GetKey()
         {
-            string sMyKey = Environment.UserName + "@" + Environment.UserDomainName;
+            string sMyKey = string.Format("{0}@{1}", Environment.UserName, Environment.UserDomainName);
             int iBitSize = 16;
             if (sMyKey.Length > iBitSize)
                 sMyKey = sMyKey.Substring(0, iBitSize);
@@ -83,7 +87,7 @@ namespace percip.io
             return DecryptAndDeserialize<T>(filename, GetKey());
         }
 
-        public void Save<T>(string filename, T obj) where T : class
+        public void Save<T>(string filename, T obj)
         {
             EncryptAndSerialize<T>(filename, obj, GetKey());
         }

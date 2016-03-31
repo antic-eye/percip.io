@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace percip.io
 {
-    interface IDataSaver
+    public interface IDataSaver
     {
-        void Save<T>(string filename, T obj) where T :class;
-        T Load<T>(string filename) where T : class;
+        void Save<T>(string filename, T obj);
+        T Load<T>(string filename);
     }
 }
