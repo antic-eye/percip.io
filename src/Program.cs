@@ -11,6 +11,9 @@ using Microsoft.Win32.TaskScheduler;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Runtime.Serialization;
+using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
+using percip.io.Properties;
 
 namespace percip.io
 {
@@ -19,7 +22,8 @@ namespace percip.io
         Logon,
         Unlock,
         Lock,
-        Logoff
+        Logoff,
+        Energysave
     }
     public enum ExitCode
     {
@@ -86,6 +90,7 @@ namespace percip.io
                             DefineTask(ts, "myLock unlock screen", "unlock_pc", TriggerType.Unlock);
                             DefineTask(ts, "myLock login to pc", "login_pc", TriggerType.Logon);
                             DefineTask(ts, "myLock logout from pc", "logout_pc", TriggerType.Logoff);
+                            DefineTask(ts, "myLock energysaver from pc", "energysave_pc", TriggerType.Energysave);
                             Console.WriteLine("Initialization complete.");
                             Environment.Exit((int)ExitCode.OK);
                         }
@@ -253,7 +258,7 @@ Here are your times:
                 Console.Write("You chose an illegal time. Please retry!");
                 interactivebreaktime(offset);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Console.Write("There is some Problem with you answer. Please retry!");
                 interactivebreaktime(offset);
@@ -268,7 +273,7 @@ Here are your times:
             var max = col.TimeStamps.Count;
             for (int i = 1; i <= 15; i++)
             {
-                if (max - start + i > -1)
+                if (start + i < max)
                 {
                     Console.WriteLine("\t\t({0})\t{1}\t{2}", i, col.TimeStamps[start + i].Stamp, col.TimeStamps[start + i].Direction.ToString());
                 }
@@ -362,7 +367,7 @@ task. Open an elevated command prompt.
             TaskDefinition td = ts.NewTask();
             td.Principal.RunLevel = TaskRunLevel.Highest;
             td.Principal.LogonType = TaskLogonType.S4U;
-
+            td.Settings.WakeToRun = true;
             td.RegistrationInfo.Description = description;
 
             switch (trigger)
@@ -385,6 +390,13 @@ task. Open an elevated command prompt.
                 case TriggerType.Lock:
                     td.Triggers.Add(new SessionStateChangeTrigger(TaskSessionStateChangeType.SessionLock));
                     td.Actions.Add(new ExecAction(executable, "lock", AssemblyDirectory));
+                    break;
+                case TriggerType.Energysave:
+                    EventTrigger evTrigger = new EventTrigger();
+                    evTrigger.Subscription = @"<QueryList><Query Id='1'><Select Path='System'>*[System[(EventID=42)]]</Select></Query></QueryList>";
+                    evTrigger.ValueQueries.Add("Name", "Value");
+                    td.Actions.Add(new ExecAction(executable, "lock", AssemblyDirectory));
+                    td.Triggers.Add(evTrigger);
                     break;
             }
             ts.RootFolder.RegisterTaskDefinition(taskPrefix + taskName, td);
@@ -598,6 +610,7 @@ task. Open an elevated command prompt.
             {
                 TimeStamp toadd = new TimeStamp();
                 toadd.Stamp = DateTime.Parse(answer);
+                if (toadd.Stamp.Date != currentDay) throw new Exception();
                 toadd.Direction = Direction.Out;
                 toadd.User = "REPAIR";
                 col.TimeStamps.Insert(i + 1, toadd);
@@ -616,9 +629,9 @@ task. Open an elevated command prompt.
             try
             {
                 if (dtOut == DateTime.MinValue)
-                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and till now ({2:HH\\:mm}) {3:hh\\:mm} h of work", dtIn.Date, dtIn, DateTime.Now, breaked(DateTime.Now,dtIn));
+                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and till now ({2:HH\\:mm}) {3:hh\\:mm} h of work", dtIn.Date, dtIn, DateTime.Now, breaked(DateTime.Now, dtIn));
                 else
-                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and {2:HH\\:mm} out. {3:hh\\:mm} h of work", dtIn.Date, dtIn, dtOut, breaked(dtOut,dtIn));
+                    Console.WriteLine("{0:yyyy-MM-dd ddd}\t {1:HH\\:mm} in and {2:HH\\:mm} out. {3:hh\\:mm} h of work", dtIn.Date, dtIn, dtOut, breaked(dtOut, dtIn));
             }
             catch (FormatException)
             {
@@ -670,7 +683,25 @@ task. Open an elevated command prompt.
                 User = Environment.UserName
             };
 
+            //EventHandling for EnergySave
+            var s = new System.Diagnostics.Eventing.Reader.EventLogReader("Microsoft-Windows-TaskScheduler/Operational"); //EventLog.GetEventLogs(".").ToArray();// Single(x => x.Log == "Application").Entries.OfType<EventLogEntry>().ToArray().Where(x=>x.EventID==1532);
+            EventRecord record;
+            List<EventRecord> records = new List<EventRecord>();
+            while ((record = s.ReadEvent()) != null)
+            {
+                if (record.Id == 108 && (string)record.Properties[0].Value == "\\__percip.io__energysave_pc")
+                {
+                    records.Add(record);
+                }
 
+            }
+            string set = (string)Settings.Default["lastenergysave"];
+            while (set != "" && records.First().ActivityId.ToString() != set)
+            {
+                records.RemoveAt(0);
+            }
+
+            int lastid = records.FindIndex(i => i.ActivityId.ToString() == set);
             TimeStampCollection col = null;
             if (File.Exists(dbFile))
             {
@@ -687,8 +718,24 @@ task. Open an elevated command prompt.
             else
                 col = new TimeStampCollection();
 
+            foreach (var rec in records)
+            {
+                if (rec.ActivityId.ToString() != set)
+                {
+                    TimeStamp repair = new TimeStamp()
+                    {
+                        Direction = Direction.Out,
+                        Stamp = rec.TimeCreated.GetValueOrDefault(),
+                        User = Environment.UserName
+                    };
+                    col.TimeStamps.Add(repair);
+                }
+            }
+            Settings.Default.lastenergysave = records.Last().ActivityId.ToString();
+            Settings.Default.Save();
+            col.TimeStamps.Sort();
             col.TimeStamps.Add(stamp);
-            Saver.Save<TimeStampCollection>(dbFile, col);
+            Saver.Save(dbFile, col);
             Console.WriteLine("Saved: {0}|{1}|{2}", stamp.Stamp, stamp.User, stamp.Direction);
         }
     }
