@@ -2,7 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml.Serialization;
 using Microsoft.Win32.TaskScheduler;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -27,7 +31,7 @@ namespace percip.io
     {
         private static string dbFile = Environment.CurrentDirectory + "\\times.db";
         private static string taskPrefix = "__percip.io__";
-        private static IDataSaver Saver = new CouchDBDataSaver();
+        private static IDataSaver Saver;
 
         static void Main(string[] args)
         {
@@ -40,6 +44,22 @@ namespace percip.io
             bool delete = false;
             string inject = string.Empty;
             bool pause = false;
+            switch (Settings.Default["DataMode"] as string)
+            {
+                case "local":
+                    Saver = new XMLDataSaver();
+                    break;
+                case "remote":
+                    Saver = new CouchDBDataSaver();
+                    break;
+                case "debug":
+                    Saver = new XMLDataSaverUnprotected();
+                    break;
+                default:
+                    Console.WriteLine("Wrong Option DataMode! Please update DataMode in config to fit local or remote.");
+                    Environment.Exit(-1);
+                    break;
+            }
 
             var configuration = CommandLineParserConfigurator
                 .Create()
@@ -557,6 +577,7 @@ task. Open an elevated command prompt.
             {
                 TimeStamp toadd = new TimeStamp();
                 toadd.Stamp = DateTime.Parse(answer);
+                if (toadd.Stamp.Date != currentDay) throw new Exception();
                 toadd.Direction = Direction.Out;
                 toadd.User = "REPAIR";
                 col.TimeStamps.Insert(i + 1, toadd);

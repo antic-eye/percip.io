@@ -79,5 +79,14 @@ namespace percip.io.Properties {
                 return ((bool)(this["isHTTPS"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("remote")]
+        public string DataMode {
+            get {
+                return ((string)(this["DataMode"]));
+            }
+        }
     }
 }

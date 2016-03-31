@@ -33,7 +33,6 @@ namespace percip.io
             }
         }
 
-        public void Save<T>(string filename, T obj) 
         {
             try
             {
