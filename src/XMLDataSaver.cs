@@ -82,12 +82,12 @@ namespace percip.io
             return sMyKey;
         }
 
-        public T Load<T>(string filename)
+        public T Load<T>(string filename) where T : class
         {
             return DecryptAndDeserialize<T>(filename, GetKey());
         }
 
-        public void Save<T>(string filename, T obj)
+        public void Save<T>(string filename, T obj) where T : class
         {
             EncryptAndSerialize<T>(filename, obj, GetKey());
         }

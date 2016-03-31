@@ -9,6 +9,20 @@ namespace percip.io
     public class TimeStampCollection
     {
         private List<TimeStamp> stamps = new List<TimeStamp>();
+        private string fingerprint = "";
+
+        public string Fingerprint
+        {
+            get
+            {
+                if (fingerprint == "")
+                {
+                    fingerprint = Guid.NewGuid().ToString();
+                }
+                return fingerprint;
+            }
+            set { fingerprint = value; }
+        }
 
         public List<TimeStamp> TimeStamps
         {
@@ -16,7 +30,7 @@ namespace percip.io
             set { stamps = value; }
         }
     }
-    public class TimeStamp:IComparable<TimeStamp>
+    public class TimeStamp : IComparable<TimeStamp>
     {
         private DateTime timeStamp;
         private string user;

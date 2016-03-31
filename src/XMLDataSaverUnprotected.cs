@@ -10,7 +10,7 @@ namespace percip.io
 {
     class XMLDataSaverUnprotected : IDataSaver
     {
-        public T Load<T>(string filename)
+        public T Load<T>(string filename) where T : class
         {
             try
             {
@@ -33,7 +33,7 @@ namespace percip.io
             }
         }
 
-        public void Save<T>(string filename, T obj) 
+        public void Save<T>(string filename, T obj) where T : class
         {
             try
             {
