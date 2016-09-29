@@ -68,7 +68,7 @@ namespace percip.io
 
             var parseResult = parser.Parse(args);
 
-            if (!parseResult.Succeeded)
+            if (!parseResult.Succeeded || args.Length == 0)
             {
                 ShowUsage(configuration, parseResult.Message);
                 Environment.Exit((int)ExitCode.ArgumentError);
